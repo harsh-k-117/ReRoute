@@ -1,7 +1,0 @@
-{
-  "_meta": {
-    "lane": "P1 Algorithm lead",
-    "stack": "Python 3.12 \u00b7 Pydantic v2 (models ARE the contract: -> OpenAPI -> TypeScript via openapi-typescript) \u00b7 JSON fixtures",
-    "desc": "text-derived vehicle-failure proposal with assumptions"
-  }
-}
