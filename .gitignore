@@ -1,1 +1,11 @@
-# reroute-agent-build-prompts.md
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+coverage.xml
+.coverage
+htmlcov/
+frontend/node_modules/
+frontend/dist/
+.env
