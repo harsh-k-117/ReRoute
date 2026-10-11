@@ -51,6 +51,7 @@ class Delivery(ContractModel):
 
 class ScenarioConfig(ContractModel):
     transfer_minutes: NonNegativeInt = 10
+    return_to_depot: bool = False
 
 
 class Scenario(ContractModel):
@@ -135,6 +136,7 @@ class Route(ContractModel):
     total_travel: NonNegativeInt = 0
     total_wait: NonNegativeInt = 0
     failed_at: NonNegativeInt | None = None
+    violations: list[str] = Field(default_factory=list)
 
 
 class Plan(ContractModel):

@@ -4,10 +4,7 @@ import pytest
 
 from contract.signatures import simulate_route
 
-pytestmark = [
-    pytest.mark.acceptance,
-    pytest.mark.xfail(reason="not implemented: Phase 4 simulator", strict=False),
-]
+pytestmark = pytest.mark.acceptance
 
 
 def _route(plan, vehicle_id):

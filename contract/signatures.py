@@ -22,27 +22,37 @@ from contract.models import (
 
 def simulate_route(scenario: Scenario, vehicle_id: str, stops: Sequence[Stop]) -> Route:
     """Simulate one vehicle route, including travel, waiting, service, and load."""
-    raise NotImplementedError
+    from engine.simulate import simulate_route as implementation
+
+    return implementation(scenario, vehicle_id, stops)
 
 
 def build_plan(scenario: Scenario) -> Plan:
     """Build a deterministic initial delivery plan for a scenario."""
-    raise NotImplementedError
+    from engine.construct import build_plan as implementation
+
+    return implementation(scenario)
 
 
 def insert_deliveries(scenario: Scenario, plan: Plan, deliveries: Sequence[Delivery]) -> Plan:
     """Insert deliveries into a plan while preserving route feasibility."""
-    raise NotImplementedError
+    from engine.construct import insert_deliveries as implementation
+
+    return implementation(scenario, plan, deliveries)
 
 
 def improve(scenario: Scenario, plan: Plan, iterations: int = 0) -> Plan:
     """Improve a feasible plan using a deterministic bounded search."""
-    raise NotImplementedError
+    from engine.improve import improve as implementation
+
+    return implementation(scenario, plan, iterations)
 
 
 def diagnose_unplaced(scenario: Scenario, delivery: Delivery) -> list[Reason]:
     """Return reason-coded feasibility diagnostics for a delivery."""
-    raise NotImplementedError
+    from engine.diagnose import diagnose_unplaced as implementation
+
+    return implementation(scenario, delivery)
 
 
 def snapshot(scenario: Scenario, plan: Plan, now: int) -> PlanSnapshot:

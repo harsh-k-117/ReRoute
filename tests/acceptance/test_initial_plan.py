@@ -5,10 +5,7 @@ import pytest
 from contract.models import Delivery, Plan
 from contract.signatures import build_plan
 
-pytestmark = [
-    pytest.mark.acceptance,
-    pytest.mark.xfail(reason="not implemented: Phase 5 solver", strict=False),
-]
+pytestmark = pytest.mark.acceptance
 
 
 def test_build_plan_returns_plan(scenario_micro):

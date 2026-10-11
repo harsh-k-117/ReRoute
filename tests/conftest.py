@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -17,17 +16,17 @@ CONTRACT_FIXTURES = ROOT / "contract" / "fixtures"
 
 def load_fixture(name: str) -> Any:
     """Load a JSON fixture by filename from contract/fixtures."""
-    return json.loads((CONTRACT_FIXTURES / name).read_text())
+    return (CONTRACT_FIXTURES / name).read_text()
 
 
 @pytest.fixture
 def scenario_micro() -> Scenario:
-    return Scenario.model_validate(load_fixture("scenario_micro.json"))
+    return Scenario.model_validate_json(load_fixture("scenario_micro.json"))
 
 
 @pytest.fixture
 def plan_micro() -> Plan:
-    return Plan.model_validate(load_fixture("plan_micro.json"))
+    return Plan.model_validate_json(load_fixture("plan_micro.json"))
 
 
 @pytest.fixture
