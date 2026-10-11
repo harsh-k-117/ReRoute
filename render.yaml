@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: reroute-api
+    runtime: python
+    buildCommand: pip install uv && uv sync --frozen --no-dev
+    startCommand: uv run uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /openapi.json
+    envVars:
+      - key: REROUTE_CORS_ORIGINS
+        value: https://reroute-tan.vercel.app
