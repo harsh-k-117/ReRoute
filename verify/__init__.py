@@ -1,5 +1,5 @@
 """Public independent validation interface."""
 
-from contract.signatures import validate
+from .validator import validate
 
 __all__ = ["validate"]

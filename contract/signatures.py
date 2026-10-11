@@ -65,9 +65,25 @@ def replan(scenario: Scenario, plan: Plan, disruption: Disruption) -> ReplanResu
     raise NotImplementedError
 
 
-def validate(scenario: Scenario, plan: Plan) -> ValidationReport:
+def validate(
+    scenario: Scenario,
+    plan: Plan,
+    previous_plan: Plan | None = None,
+    disruption: object | None = None,
+    diff: object | None = None,
+    proposal: object | None = None,
+) -> ValidationReport:
     """Independently validate a plan against all routing invariants."""
-    raise NotImplementedError
+    from verify.validator import validate as implementation
+
+    return implementation(
+        scenario=scenario,
+        plan=plan,
+        previous_plan=previous_plan,
+        disruption=disruption,
+        diff=diff,
+        proposal=proposal,
+    )
 
 
 def classify(previous: Plan, revised: Plan) -> Diff:
