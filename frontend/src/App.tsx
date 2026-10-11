@@ -83,10 +83,107 @@ function LoadProfile({ plan, scenario }: { plan: Plan; scenario: Scenario }) {
   })}</div>;
 }
 
+function timeToMinutes(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return (hours ?? 0) * 60 + (minutes ?? 0);
+}
+
 function StopTable({ plan, scenario }: { plan: Plan; scenario: Scenario }) {
   const [sort, setSort] = useState<"arrival" | "load_after">("arrival");
-  const rows = useMemo(() => plan.routes.flatMap((route) => route.stops.filter((stop) => stop.delivery_id).map((stop) => ({ ...stop, vehicle_id: route.vehicle_id }))).sort((a, b) => a[sort] - b[sort]), [plan, sort]);
-  return <section className="p12-panel"><div className="p12-panel-heading"><div><h2>Stop schedule</h2><p>Exact simulator timings for every planned delivery.</p></div><label>Sort <select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)}><option value="arrival">Arrival</option><option value="load_after">Load</option></select></label></div><div className="p12-table-wrap"><table><thead><tr><th>Delivery</th><th>Vehicle</th><th>Location</th><th>Arrival</th><th>Wait</th><th>Start</th><th>Depart</th><th>Load</th></tr></thead><tbody>{rows.map((stop) => <tr key={stop.delivery_id} onMouseEnter={() => sessionStore.setHovered(stop.delivery_id ?? null)} onMouseLeave={() => sessionStore.setHovered(null)}><td><b>{stop.delivery_id}</b></td><td>{stop.vehicle_id}</td><td>{stop.location_id}</td><td>{minutes(stop.arrival)}</td><td>{stop.wait}m</td><td>{minutes(stop.service_start)}</td><td>{minutes(stop.depart)}</td><td>{stop.load_after}</td></tr>)}</tbody></table></div></section>;
+  const [showForm, setShowForm] = useState(false);
+  const [manualTrips, setManualTrips] = useState<Array<{
+    delivery_id: string;
+    vehicle_id: string;
+    location_id: string;
+    arrival: number;
+    wait: number;
+    service_start: number;
+    depart: number;
+    load_after: number;
+  }>>([]);
+  const [form, setForm] = useState({
+    delivery_id: "",
+    vehicle_id: scenario.vehicles[0]?.id ?? "",
+    location_id: scenario.locations[0]?.id ?? "",
+    start: "08:00",
+    depart: "08:30",
+    load: "1",
+  });
+
+  const scheduledRows = useMemo(() => {
+    const baseRows = plan.routes.flatMap((route) => route.stops.filter((stop) => stop.delivery_id).map((stop) => ({ ...stop, vehicle_id: route.vehicle_id })));
+    return [...baseRows, ...manualTrips];
+  }, [manualTrips, plan.routes]);
+
+  const rows = useMemo(() => scheduledRows.sort((a, b) => a[sort] - b[sort]), [scheduledRows, sort]);
+
+  const addTrip = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!form.delivery_id.trim() || !form.vehicle_id || !form.location_id) return;
+    const startMinutes = timeToMinutes(form.start);
+    const departMinutes = timeToMinutes(form.depart);
+    if (Number.isNaN(startMinutes) || Number.isNaN(departMinutes) || departMinutes < startMinutes) return;
+
+    setManualTrips((current) => [
+      ...current,
+      {
+        delivery_id: form.delivery_id.trim(),
+        vehicle_id: form.vehicle_id,
+        location_id: form.location_id,
+        arrival: startMinutes,
+        wait: 0,
+        service_start: startMinutes,
+        depart: departMinutes,
+        load_after: Number(form.load) || 0,
+      },
+    ]);
+    setForm({
+      delivery_id: "",
+      vehicle_id: scenario.vehicles[0]?.id ?? "",
+      location_id: scenario.locations[0]?.id ?? "",
+      start: form.start,
+      depart: form.depart,
+      load: "1",
+    });
+    setShowForm(false);
+  };
+
+  return <section className="p12-panel"><div className="p12-panel-heading"><div><h2>Stop schedule</h2><p>Exact simulator timings for every planned delivery.</p></div><div style={{ display: "flex", alignItems: "center", gap: 8 }}><button type="button" onClick={() => setShowForm((open) => !open)} className="p12-small-button">{showForm ? "Close" : "Create trip"}</button><label>Sort <select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)}><option value="arrival">Arrival</option><option value="load_after">Load</option></select></label></div></div>
+    {showForm && <form onSubmit={addTrip} style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(120px, 1fr))", gap: 10, padding: "0 18px 18px", borderBottom: "1px solid #edf1ed" }}>
+      <label style={{ display: "grid", gap: 6, color: "#66736b", fontSize: 11, fontWeight: 700 }}>
+        Delivery ID
+        <input value={form.delivery_id} onChange={(event) => setForm((current) => ({ ...current, delivery_id: event.target.value }))} style={{ padding: "8px 10px", border: "1px solid #dfe7e1", borderRadius: 6 }} placeholder="D101" />
+      </label>
+      <label style={{ display: "grid", gap: 6, color: "#66736b", fontSize: 11, fontWeight: 700 }}>
+        Vehicle
+        <select value={form.vehicle_id} onChange={(event) => setForm((current) => ({ ...current, vehicle_id: event.target.value }))} style={{ padding: "8px 10px", border: "1px solid #dfe7e1", borderRadius: 6 }}>
+          {scenario.vehicles.map((vehicle) => <option key={vehicle.id} value={vehicle.id}>{vehicle.id}</option>)}
+        </select>
+      </label>
+      <label style={{ display: "grid", gap: 6, color: "#66736b", fontSize: 11, fontWeight: 700 }}>
+        Location
+        <select value={form.location_id} onChange={(event) => setForm((current) => ({ ...current, location_id: event.target.value }))} style={{ padding: "8px 10px", border: "1px solid #dfe7e1", borderRadius: 6 }}>
+          {scenario.locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}
+        </select>
+      </label>
+      <label style={{ display: "grid", gap: 6, color: "#66736b", fontSize: 11, fontWeight: 700 }}>
+        Start
+        <input type="time" value={form.start} onChange={(event) => setForm((current) => ({ ...current, start: event.target.value }))} style={{ padding: "8px 10px", border: "1px solid #dfe7e1", borderRadius: 6 }} />
+      </label>
+      <label style={{ display: "grid", gap: 6, color: "#66736b", fontSize: 11, fontWeight: 700 }}>
+        Depart
+        <input type="time" value={form.depart} onChange={(event) => setForm((current) => ({ ...current, depart: event.target.value }))} style={{ padding: "8px 10px", border: "1px solid #dfe7e1", borderRadius: 6 }} />
+      </label>
+      <label style={{ display: "grid", gap: 6, color: "#66736b", fontSize: 11, fontWeight: 700 }}>
+        Load
+        <input type="number" min={0} value={form.load} onChange={(event) => setForm((current) => ({ ...current, load: event.target.value }))} style={{ padding: "8px 10px", border: "1px solid #dfe7e1", borderRadius: 6 }} />
+      </label>
+      <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 4 }}>
+        <button type="button" onClick={() => setShowForm(false)} className="p12-small-button">Cancel</button>
+        <button type="submit" className="p12-primary-button">Add trip</button>
+      </div>
+    </form>}
+    <div className="p12-table-wrap"><table><thead><tr><th>Delivery</th><th>Vehicle</th><th>Location</th><th>Arrival</th><th>Wait</th><th>Start</th><th>Depart</th><th>Load</th></tr></thead><tbody>{rows.map((stop) => <tr key={`${stop.delivery_id}-${stop.vehicle_id}-${stop.arrival}-${stop.depart}`} onMouseEnter={() => sessionStore.setHovered(stop.delivery_id ?? null)} onMouseLeave={() => sessionStore.setHovered(null)}><td><b>{stop.delivery_id}</b></td><td>{stop.vehicle_id}</td><td>{stop.location_id}</td><td>{minutes(stop.arrival)}</td><td>{stop.wait}m</td><td>{minutes(stop.service_start)}</td><td>{minutes(stop.depart)}</td><td>{stop.load_after}</td></tr>)}</tbody></table></div></section>;
 }
 
 function Unplaced({ plan }: { plan: Plan }) {
@@ -177,9 +274,8 @@ function SectionHeading({ id, eyebrow, title, description }: { id: string; eyebr
 }
 
 function App() {
-  const [scenarioName, setScenarioName] = useState("baseline");
+  const scenarioName = "baseline";
   const { data, error, loading } = useInitialPlan(scenarioName);
-  const [scenarios, setScenarios] = useState<string[]>(["baseline", "impossible", "stress"]);
   const [revised, setRevised] = useState<Plan>();
   const [diff, setDiff] = useState<Diff>();
   const [activeReport, setActiveReport] = useState<{ passed: boolean; checks: { id: string; passed: boolean; details: string }[] }>();
@@ -208,7 +304,6 @@ function App() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [mobileNavOpen]);
-  useEffect(() => { api.scenarios().then((items) => setScenarios(items.map((item) => item.name))).catch(() => undefined); }, []);
   useEffect(() => { fetch("/city_map.json").then((response) => response.json() as Promise<CityMap>).then(setCity).catch(() => undefined); }, []);
   const loadedPlan = data ? (revised ?? data.plan) : undefined;
   const end = loadedPlan && data ? Math.max(data.scenario.start_time + 60, ...loadedPlan.routes.flatMap((route) => route.stops.map((stop) => stop.depart + 20))) : 0;
@@ -281,11 +376,6 @@ function App() {
         <header className="rr-topbar">
           <button ref={mobileNavTriggerRef} className="rr-mobile-menu" aria-label="Open navigation" aria-expanded={mobileNavOpen} aria-controls="rr-primary-navigation" onClick={() => setMobileNavOpen(true)}><Menu size={19} /></button>
           <div className="rr-mobile-brand"><span className="p12-brand-mark"><Route size={16} /></span><b>ReRoute</b></div>
-          <label className="p12-scenario">Scenario
-            <select value={scenarioName} onChange={(event) => { setScenarioName(event.target.value); setRevised(undefined); setDiff(undefined); setActiveClosure([]); setActiveFailures({}); }}>
-              {scenarios.map((name) => <option key={name}>{name}</option>)}
-            </select>
-          </label>
           <span className="rr-plan-version" title={displayedPlan.version_id}>PLAN <b>{displayedPlan.version_id.slice(0, 8)}</b></span>
           <span className={`rr-validation-state ${validation.passed ? "is-valid" : "is-invalid"}`} role="status">
             {validation.passed ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}{planStatus}
