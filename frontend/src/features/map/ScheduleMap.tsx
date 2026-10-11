@@ -173,7 +173,7 @@ export function ScheduleMap(props: ScheduleMapProps) {
           aria-label="Schematic map of vehicle routes at the simulation clock"
         >
           <rect x={0} y={0} width={W} height={H} fill="#252B54" />
-          <polyline points={pts(city.river)} fill="none" stroke="#279B91" strokeWidth={30} strokeLinejoin="round" opacity={0.65} />
+          <polyline points={pts(city.river)} fill="none" stroke="#2778A8" strokeWidth={30} strokeLinejoin="round" opacity={0.65} />
 
           {/* roads: casing first, fill on top */}
           {city.edges.map((e) => (
@@ -188,12 +188,12 @@ export function ScheduleMap(props: ScheduleMapProps) {
           {/* closures */}
           {closurePaths.map(({ c, path }, i) => (
             <g key={`cl${i}`}>
-              <polyline points={pts(path.pts)} fill="none" stroke={DIFF_COLOR.broken} strokeWidth={6}
+              <polyline points={pts(path.pts)} fill="none" stroke={DIFF_COLOR.moved} strokeWidth={6}
                 strokeLinecap="round" strokeLinejoin="round" opacity={0.85} vectorEffect="non-scaling-stroke" />
               <polyline points={pts(path.pts)} fill="none" stroke="#FFF7EB" strokeWidth={2} strokeDasharray="6 6"
                 vectorEffect="non-scaling-stroke" />
               <text x={path.pts[Math.floor(path.pts.length / 2)][0]} y={path.pts[Math.floor(path.pts.length / 2)][1] - px(10)}
-                fontSize={px(11)} fontWeight={600} textAnchor="middle" fill={DIFF_COLOR.broken}
+                fontSize={px(11)} fontWeight={600} textAnchor="middle" fill={DIFF_COLOR.moved}
                 stroke="#252B54" strokeWidth={px(3)} paintOrder="stroke">{c.label ?? 'Closed'}</text>
             </g>
           ))}
@@ -233,7 +233,7 @@ export function ScheduleMap(props: ScheduleMapProps) {
           {/* depot */}
           {city.locations.filter((l) => l.isDepot).map((l) => (
             <g key={`d${l.id}`}>
-              <rect x={l.x - px(9)} y={l.y - px(9)} width={px(18)} height={px(18)} rx={px(3)} fill="#F07879" stroke="#FFF7EB" strokeWidth={px(2)} />
+              <rect x={l.x - px(9)} y={l.y - px(9)} width={px(18)} height={px(18)} rx={px(3)} fill="#7669E8" stroke="#FFFFFF" strokeWidth={px(2)} />
               <text x={l.x} y={l.y + px(3.5)} fontSize={px(10)} fontWeight={700} textAnchor="middle" fill="#191F45">D</text>
               <text x={l.x + px(13)} y={l.y + px(4)} fontSize={px(11)} fill="#FFF7EB" stroke="#252B54" strokeWidth={px(3)} paintOrder="stroke">{l.name}</text>
             </g>

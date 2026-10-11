@@ -304,9 +304,9 @@ function App() {
               </div>
               <div className={`p12-validation ${validation.passed ? "ok" : "bad"}`}>{validation.passed ? <CheckCircle2 /> : <AlertCircle />} {planStatus}</div>
               <svg className="p12-hero-art" viewBox="0 0 420 160" aria-hidden="true">
-                <circle cx="325" cy="54" r="47" fill="#F07879" />
-                <path d="M214 132h206v28H214zm12-34h21v34h-21zm27-16h34v50h-34zm42 24h24v26h-24zm31-32h32v58h-32zm40 20h19v38h-19z" fill="#493A69" />
-                <path d="M0 145h420M82 136c20-34 41-40 62-39-12-8-27-11-43-8 21-11 43-10 62-2-21-3-39 7-55 25" fill="none" stroke="#279B91" strokeWidth="4" strokeLinecap="round" />
+                <circle cx="325" cy="54" r="47" fill="#c9c0f5" />
+                <path d="M214 132h206v28H214zm12-34h21v34h-21zm27-16h34v50h-34zm42 24h24v26h-24zm31-32h32v58h-32zm40 20h19v38h-19z" fill="#2926c8" />
+                <path d="M0 145h420M82 136c20-34 41-40 62-39-12-8-27-11-43-8 21-11 43-10 62-2-21-3-39 7-55 25" fill="none" stroke="#7669e8" strokeWidth="4" strokeLinecap="round" />
               </svg>
             </div>
             <section className="p12-kpis" aria-label="Plan metrics">

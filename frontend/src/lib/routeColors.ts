@@ -1,12 +1,12 @@
 export const VEHICLE_ROUTE_COLORS = [
-  "#54DCE8",
-  "#F07879",
-  "#B7A8F0",
-  "#65C8AA",
-  "#F1B866",
-  "#B096DD",
-  "#7DAAF5",
-  "#EEA1C1",
+  "#69A7FF",
+  "#A78BFA",
+  "#28B8B4",
+  "#7C83F6",
+  "#52C6D7",
+  "#C4B5FD",
+  "#2E9FCA",
+  "#8B79D6",
 ];
 
 export function vehicleRouteColor(vehicleId: string, vehicleIds: string[]): string {
