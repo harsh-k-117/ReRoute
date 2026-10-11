@@ -7,7 +7,6 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-
 NonNegativeInt = Annotated[int, Field(ge=0)]
 PositiveInt = Annotated[int, Field(gt=0)]
 
@@ -312,10 +311,35 @@ class ReplanResult(ContractModel):
 Proposal.model_rebuild()
 
 __all__ = [
-    "Classification", "Delivery", "Diff", "DiffRow", "Disruption", "InvariantResult",
-    "KpiSummary", "LedgerAction", "LedgerCause", "LedgerEntry", "Location", "Plan",
-    "PlanSnapshot", "Proposal", "ProposalStatus", "Reason", "ReasonCode", "ReplanResult",
-    "RoadClosure", "Route", "Scenario", "ScenarioConfig", "SourceSpan", "Stop", "StopKind",
-    "Unplaced", "UrgentDelivery", "ValidationReport", "Vehicle", "VehicleFailure",
+    "Classification",
+    "Delivery",
+    "Diff",
+    "DiffRow",
+    "Disruption",
+    "InvariantResult",
+    "KpiSummary",
+    "LedgerAction",
+    "LedgerCause",
+    "LedgerEntry",
+    "Location",
+    "Plan",
+    "PlanSnapshot",
+    "Proposal",
+    "ProposalStatus",
+    "Reason",
+    "ReasonCode",
+    "ReplanResult",
+    "RoadClosure",
+    "Route",
+    "Scenario",
+    "ScenarioConfig",
+    "SourceSpan",
+    "Stop",
+    "StopKind",
+    "Unplaced",
+    "UrgentDelivery",
+    "ValidationReport",
+    "Vehicle",
+    "VehicleFailure",
     "VehicleReadyState",
 ]

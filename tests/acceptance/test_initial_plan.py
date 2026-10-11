@@ -28,8 +28,12 @@ def test_every_delivery_is_placed_or_unplaced_once(scenario_micro):
 def test_every_unplaced_delivery_has_a_reason(scenario_micro):
     """R8: each delivery the solver cannot place carries a diagnosis (I1)."""
     impossible = Delivery(
-        id="OVERSIZE", location_id="A", demand=max(v.capacity for v in scenario_micro.vehicles) + 1,
-        window_open=500, window_close=700, service_time=5,
+        id="OVERSIZE",
+        location_id="A",
+        demand=max(v.capacity for v in scenario_micro.vehicles) + 1,
+        window_open=500,
+        window_close=700,
+        service_time=5,
     )
     scenario = scenario_micro.model_copy(
         update={"deliveries": [*scenario_micro.deliveries, impossible]}

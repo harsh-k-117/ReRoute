@@ -27,9 +27,7 @@ class Scoreboard:
 def main() -> int:
     scoreboard = Scoreboard()
     exit_code = pytest.main(["-q", "-m", "acceptance"], plugins=[scoreboard])
-    total = (
-        scoreboard.passed + scoreboard.xfailed + scoreboard.failed + scoreboard.skipped
-    )
+    total = scoreboard.passed + scoreboard.xfailed + scoreboard.failed + scoreboard.skipped
     print(
         f"{scoreboard.passed} / {total} passing, "
         f"{scoreboard.xfailed} xfail, {scoreboard.failed} failed"

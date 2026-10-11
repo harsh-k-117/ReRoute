@@ -23,8 +23,14 @@ def test_diff_classifies_every_delivery(scenario_micro, plan_micro):
 def test_no_op_replan_keeps_every_delivery(scenario_micro, plan_micro):
     """R15: a no-op replan reports all deliveries as kept (I12)."""
     unused_edge = RoadClosure(
-        type="road_closure", a="C", b="F", mode="add_minutes", value=20,
-        both_directions=True, start=900, end=1000,
+        type="road_closure",
+        a="C",
+        b="F",
+        mode="add_minutes",
+        value=20,
+        both_directions=True,
+        start=900,
+        end=1000,
     )
     result = replan(scenario_micro, plan_micro, unused_edge)
     assert result.diff.rows
@@ -34,8 +40,14 @@ def test_no_op_replan_keeps_every_delivery(scenario_micro, plan_micro):
 def test_every_moved_or_broken_row_has_a_cause(scenario_micro, plan_micro):
     """R15: every changed customer assignment has a reason (I8)."""
     event = RoadClosure(
-        type="road_closure", a="A", b="B", mode="add_minutes", value=25,
-        both_directions=True, start=480, end=700,
+        type="road_closure",
+        a="A",
+        b="B",
+        mode="add_minutes",
+        value=25,
+        both_directions=True,
+        start=480,
+        end=700,
     )
     result = replan(scenario_micro, plan_micro, event)
     changed = [row for row in result.diff.rows if row.classification != "kept"]
@@ -62,8 +74,14 @@ def test_kept_rows_name_the_original_vehicle_and_eta(scenario_micro, plan_micro)
 def test_new_delivery_diff_row_has_new_badge(scenario_micro, plan_micro):
     """R11/R15: a newly placed delivery is visible as NEW in the comparison (I8)."""
     delivery = Delivery(
-        id="NEW-1", location_id="C", demand=1, window_open=650, window_close=700,
-        service_time=5, priority=2, release_time=630,
+        id="NEW-1",
+        location_id="C",
+        demand=1,
+        window_open=650,
+        window_close=700,
+        service_time=5,
+        priority=2,
+        release_time=630,
     )
     event = UrgentDelivery(type="urgent_delivery", delivery=delivery, report_time=630)
     result = replan(scenario_micro, plan_micro, event)
@@ -76,5 +94,6 @@ def test_broken_row_can_show_earliest_feasible_eta(scenario_micro, plan_micro):
     result = classify(plan_micro, plan_micro)
     assert all(
         row.earliest_feasible_eta is None or row.earliest_feasible_eta >= 0
-        for row in result.rows if row.classification == "broken"
+        for row in result.rows
+        if row.classification == "broken"
     )

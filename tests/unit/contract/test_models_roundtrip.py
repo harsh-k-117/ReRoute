@@ -7,8 +7,8 @@ import pytest
 from pydantic import TypeAdapter, ValidationError
 
 from contract.models import (
-    Diff,
     Delivery,
+    Diff,
     Disruption,
     Plan,
     Proposal,

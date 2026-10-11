@@ -30,9 +30,7 @@ def build_plan(scenario: Scenario) -> Plan:
     raise NotImplementedError
 
 
-def insert_deliveries(
-    scenario: Scenario, plan: Plan, deliveries: Sequence[Delivery]
-) -> Plan:
+def insert_deliveries(scenario: Scenario, plan: Plan, deliveries: Sequence[Delivery]) -> Plan:
     """Insert deliveries into a plan while preserving route feasibility."""
     raise NotImplementedError
 

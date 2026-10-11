@@ -13,8 +13,14 @@ pytestmark = [
 
 def _urgent(location_id="C", demand=1, close=700):
     delivery = Delivery(
-        id="NEW-1", location_id=location_id, demand=demand, window_open=650,
-        window_close=close, service_time=5, priority=2, release_time=630,
+        id="NEW-1",
+        location_id=location_id,
+        demand=demand,
+        window_open=650,
+        window_close=close,
+        service_time=5,
+        priority=2,
+        release_time=630,
     )
     return UrgentDelivery(type="urgent_delivery", delivery=delivery, report_time=630)
 
@@ -30,8 +36,7 @@ def test_urgent_delivery_is_badged_new(scenario_micro, plan_micro):
     """R11/R15: placed urgent delivery is visibly marked NEW in the result (I8)."""
     result = replan(scenario_micro, plan_micro, _urgent())
     stop = next(
-        stop for route in result.plan.routes for stop in route.stops
-        if stop.delivery_id == "NEW-1"
+        stop for route in result.plan.routes for stop in route.stops if stop.delivery_id == "NEW-1"
     )
     assert "NEW" in stop.badges
 
@@ -40,7 +45,9 @@ def test_urgent_pickup_occurs_at_depot_after_report_time(scenario_micro, plan_mi
     """R11: urgent parcel pickup is at depot and respects its report-time release (I7)."""
     result = replan(scenario_micro, plan_micro, _urgent())
     pickups = [
-        stop for route in result.plan.routes for stop in route.stops
+        stop
+        for route in result.plan.routes
+        for stop in route.stops
         if stop.kind == "pickup" and "NEW-1" in stop.parcel_ids
     ]
     assert pickups
