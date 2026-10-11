@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CityGraph, type CityMap, type Pt } from './cityGraph';
 import { buildTimeline, fmtTime, loadAt, stateAt, type MapRoute, type Timeline, type VehicleState } from './timeline';
+import { vehicleRouteColor } from '../../lib/routeColors';
 
 export type DiffClass = 'kept' | 'moved' | 'broken';
 
 // green / amber / red are reserved for kept / moved / broken, so vehicle colours avoid them.
-const DIFF_COLOR: Record<DiffClass, string> = { kept: '#2E9E5B', moved: '#E0A100', broken: '#D64545' };
-const VEHICLE_COLORS = ['#2F5DA8', '#7B4FA3', '#0E7490', '#3F3F9E', '#8A5A2B', '#A64AC9', '#475569', '#1D4ED8'];
+const DIFF_COLOR: Record<DiffClass, string> = { kept: '#279B91', moved: '#A56B16', broken: '#B83F50' };
 
 export interface ScheduleMapProps {
   city: CityMap;
@@ -23,6 +23,8 @@ export interface ScheduleMapProps {
   stopStatus?: Record<string, DiffClass>;
   /** Stop keys of newly reported urgent deliveries (badged NEW). */
   newKeys?: string[];
+  /** All scenario vehicles, used to keep route colours stable across replans. */
+  vehicleIds?: string[];
   /** Locations of deliveries that could not be placed. */
   unplacedLocationIds?: string[];
   highlightedKey?: string | null;
@@ -33,8 +35,8 @@ export interface ScheduleMapProps {
 
 interface View { x: number; y: number; w: number }
 const ROAD_PX = { local: 2.5, arterial: 4, bridge: 5 } as const;
-const ROAD_CASING = { local: '#C9CFD6', arterial: '#B4BCC6', bridge: '#7C93AB' } as const;
-const ROAD_FILL = { local: '#FFFFFF', arterial: '#FFFFFF', bridge: '#F3F6F9' } as const;
+const ROAD_CASING = { local: '#50577E', arterial: '#71779A', bridge: '#54DCE8' } as const;
+const ROAD_FILL = { local: '#30365D', arterial: '#363D66', bridge: '#404873' } as const;
 
 const pts = (p: Pt[]) => p.map(([x, y]) => `${x},${y}`).join(' ');
 
@@ -66,7 +68,7 @@ function describe(tl: Timeline, st: VehicleState, graph: CityGraph, failedAt?: n
 export function ScheduleMap(props: ScheduleMapProps) {
   const {
     city, routes, clock, baselineRoutes, failures = {}, closures = [], stopStatus = {},
-    newKeys = [], unplacedLocationIds = [], highlightedKey = null, selectedVehicleId = null,
+    newKeys = [], vehicleIds = [], unplacedLocationIds = [], highlightedKey = null, selectedVehicleId = null,
     onHoverStop, onSelectVehicle,
   } = props;
 
@@ -79,9 +81,9 @@ export function ScheduleMap(props: ScheduleMapProps) {
   );
 
   const colorOf = useMemo(() => {
-    const ids = [...new Set([...routes, ...(baselineRoutes ?? [])].map((r) => r.vehicleId))].sort();
-    return (id: string) => VEHICLE_COLORS[ids.indexOf(id) % VEHICLE_COLORS.length];
-  }, [routes, baselineRoutes]);
+    const ids = vehicleIds.length ? vehicleIds : [...new Set([...routes, ...(baselineRoutes ?? [])].map((r) => r.vehicleId))].sort();
+    return (id: string) => vehicleRouteColor(id, ids);
+  }, [routes, baselineRoutes, vehicleIds]);
 
   const [W, H] = city.viewBox;
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -156,12 +158,13 @@ export function ScheduleMap(props: ScheduleMapProps) {
   };
 
   return (
-    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-      <div ref={wrapRef} style={{ position: 'relative', flex: '1 1 520px', minWidth: 320 }}>
+    <div className="p12-map-layout">
+      <div ref={wrapRef} className="p12-map-viewport">
         <svg
           ref={svgRef}
           viewBox={`${v.x} ${v.y} ${v.w} ${vh}`}
-          style={{ width: '100%', aspectRatio: `${W} / ${H}`, display: 'block', borderRadius: 10, touchAction: 'none', cursor: drag.current ? 'grabbing' : 'grab', background: '#ECEFF1' }}
+          className="p12-city-map"
+          style={{ aspectRatio: `${W} / ${H}`, cursor: drag.current ? 'grabbing' : 'grab' }}
           onPointerDown={onDown}
           onPointerMove={onMove}
           onPointerUp={() => { drag.current = null; }}
@@ -169,8 +172,8 @@ export function ScheduleMap(props: ScheduleMapProps) {
           role="img"
           aria-label="Schematic map of vehicle routes at the simulation clock"
         >
-          <rect x={0} y={0} width={W} height={H} fill="#ECEFF1" />
-          <polyline points={pts(city.river)} fill="none" stroke="#BCD3E6" strokeWidth={26} strokeLinejoin="round" />
+          <rect x={0} y={0} width={W} height={H} fill="#252B54" />
+          <polyline points={pts(city.river)} fill="none" stroke="#279B91" strokeWidth={30} strokeLinejoin="round" opacity={0.65} />
 
           {/* roads: casing first, fill on top */}
           {city.edges.map((e) => (
@@ -187,11 +190,11 @@ export function ScheduleMap(props: ScheduleMapProps) {
             <g key={`cl${i}`}>
               <polyline points={pts(path.pts)} fill="none" stroke={DIFF_COLOR.broken} strokeWidth={6}
                 strokeLinecap="round" strokeLinejoin="round" opacity={0.85} vectorEffect="non-scaling-stroke" />
-              <polyline points={pts(path.pts)} fill="none" stroke="#fff" strokeWidth={2} strokeDasharray="6 6"
+              <polyline points={pts(path.pts)} fill="none" stroke="#FFF7EB" strokeWidth={2} strokeDasharray="6 6"
                 vectorEffect="non-scaling-stroke" />
               <text x={path.pts[Math.floor(path.pts.length / 2)][0]} y={path.pts[Math.floor(path.pts.length / 2)][1] - px(10)}
                 fontSize={px(11)} fontWeight={600} textAnchor="middle" fill={DIFF_COLOR.broken}
-                stroke="#fff" strokeWidth={px(3)} paintOrder="stroke">{c.label ?? 'Closed'}</text>
+                stroke="#252B54" strokeWidth={px(3)} paintOrder="stroke">{c.label ?? 'Closed'}</text>
             </g>
           ))}
 
@@ -230,9 +233,9 @@ export function ScheduleMap(props: ScheduleMapProps) {
           {/* depot */}
           {city.locations.filter((l) => l.isDepot).map((l) => (
             <g key={`d${l.id}`}>
-              <rect x={l.x - px(9)} y={l.y - px(9)} width={px(18)} height={px(18)} rx={px(3)} fill="#4B5563" stroke="#fff" strokeWidth={px(2)} />
-              <text x={l.x} y={l.y + px(3.5)} fontSize={px(10)} fontWeight={700} textAnchor="middle" fill="#fff">D</text>
-              <text x={l.x + px(13)} y={l.y + px(4)} fontSize={px(11)} fill="#1F2937" stroke="#fff" strokeWidth={px(3)} paintOrder="stroke">{l.name}</text>
+              <rect x={l.x - px(9)} y={l.y - px(9)} width={px(18)} height={px(18)} rx={px(3)} fill="#F07879" stroke="#FFF7EB" strokeWidth={px(2)} />
+              <text x={l.x} y={l.y + px(3.5)} fontSize={px(10)} fontWeight={700} textAnchor="middle" fill="#191F45">D</text>
+              <text x={l.x + px(13)} y={l.y + px(4)} fontSize={px(11)} fill="#FFF7EB" stroke="#252B54" strokeWidth={px(3)} paintOrder="stroke">{l.name}</text>
             </g>
           ))}
 
@@ -261,11 +264,11 @@ export function ScheduleMap(props: ScheduleMapProps) {
                       <text x={l.x} y={l.y + px(3.5)} fontSize={px(10)} fontWeight={700} textAnchor="middle"
                         fill={done ? '#fff' : col} style={{ pointerEvents: 'none' }}>{si + 1}</text>
                       {newKeys.includes(s.key) && (
-                        <text x={l.x} y={l.y - r - px(5)} fontSize={px(9)} fontWeight={700} textAnchor="middle" fill="#1F2937"
-                          stroke="#fff" strokeWidth={px(3)} paintOrder="stroke">NEW</text>
+                        <text x={l.x} y={l.y - r - px(5)} fontSize={px(9)} fontWeight={700} textAnchor="middle" fill="#FFF7EB"
+                          stroke="#252B54" strokeWidth={px(3)} paintOrder="stroke">NEW</text>
                       )}
                       {(hot || selectedVehicleId === id) && (
-                        <text x={l.x + r + px(4)} y={l.y + px(4)} fontSize={px(11)} fill="#1F2937" stroke="#fff"
+                        <text x={l.x + r + px(4)} y={l.y + px(4)} fontSize={px(11)} fill="#FFF7EB" stroke="#252B54"
                           strokeWidth={px(3)} paintOrder="stroke" style={{ pointerEvents: 'none' }}>{graph.name(s.locationId)}</text>
                       )}
                     </g>
@@ -286,7 +289,7 @@ export function ScheduleMap(props: ScheduleMapProps) {
                 {st.status === 'servicing' && <circle cx={x} cy={y} r={px(19)} fill={col} opacity={0.22} />}
                 {st.status === 'waiting' && <circle cx={x} cy={y} r={px(18)} fill="none" stroke={col} strokeWidth={px(2)} strokeDasharray={`${px(3)} ${px(3)}`} />}
                 {selectedVehicleId === id && <circle cx={x} cy={y} r={px(21)} fill="none" stroke="#111827" strokeWidth={px(1.5)} />}
-                <circle cx={x} cy={y} r={px(13)} fill={failed ? '#9CA3AF' : col} stroke="#fff" strokeWidth={px(2.5)} />
+                <circle cx={x} cy={y} r={px(13)} fill={failed ? '#B83F50' : col} stroke="#FFF7EB" strokeWidth={px(2.5)} />
                 <text x={x} y={y + px(3.5)} fontSize={px(10)} fontWeight={700} textAnchor="middle" fill="#fff" style={{ pointerEvents: 'none' }}>
                   {id.replace(/^vehicle[-_ ]?/i, '').slice(0, 3)}
                 </text>
@@ -305,10 +308,8 @@ export function ScheduleMap(props: ScheduleMapProps) {
           const l = graph.location(s.locationId); const pos = toScreen(l.x, l.y);
           const wait = Math.max(0, s.start - s.arrival);
           return (
-            <div role="tooltip" style={{
-              position: 'absolute', left: Math.min(pos.left + 14, width - 230), top: Math.max(pos.top - 10, 4), width: 216, pointerEvents: 'none',
-              background: '#fff', border: '1px solid #D1D5DB', borderRadius: 8, padding: '8px 10px', fontSize: 12, lineHeight: 1.45,
-              boxShadow: '0 4px 14px rgba(15,23,42,.14)', color: '#1F2937',
+            <div role="tooltip" className="p12-map-tooltip" style={{
+              left: Math.min(pos.left + 14, width - 230), top: Math.max(pos.top - 10, 4),
             }}>
               <div style={{ fontWeight: 600 }}>{graph.name(s.locationId)}</div>
               <div>{tl.route.vehicleId} · stop {hover.si + 1}{s.kind === 'pickup' ? ' (pickup)' : ''}</div>
@@ -321,38 +322,31 @@ export function ScheduleMap(props: ScheduleMapProps) {
           );
         })()}
 
-        <button type="button" onClick={() => setView(null)} style={{
-          position: 'absolute', top: 8, left: 8, padding: '4px 10px', fontSize: 12, borderRadius: 6,
-          border: '1px solid #CBD5E1', background: '#fff', cursor: 'pointer',
-        }}>Fit to routes</button>
+        <button type="button" className="p12-map-fit" onClick={() => setView(null)}>Fit to routes</button>
       </div>
 
       {/* vehicle status at the clock */}
-      <div style={{ flex: '0 1 260px', minWidth: 220, fontSize: 13 }}>
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>Vehicles at {fmtTime(clock)}</div>
+      <div className="p12-vehicle-list">
+        <div className="p12-vehicle-list-heading">Vehicles at <b>{fmtTime(clock)}</b></div>
         {timelines.map((tl, ri) => {
           const id = tl.route.vehicleId; const st = states[ri];
           const load = loadAt(tl.route, clock); const pct = tl.route.capacity ? Math.min(100, (load / tl.route.capacity) * 100) : 0;
           return (
-            <button key={id} type="button" onClick={() => onSelectVehicle?.(selectedVehicleId === id ? null : id)}
-              style={{
-                display: 'block', width: '100%', textAlign: 'left', padding: '7px 8px', marginBottom: 6, borderRadius: 8,
-                border: `1px solid ${selectedVehicleId === id ? '#111827' : '#E2E8F0'}`, background: '#fff', cursor: 'pointer', font: 'inherit',
-              }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button key={id} type="button" className={`p12-vehicle-card ${selectedVehicleId === id ? 'is-selected' : ''} ${st.status === 'failed' ? 'is-failed' : ''}`} onClick={() => onSelectVehicle?.(selectedVehicleId === id ? null : id)}>
+              <div className="p12-vehicle-card-heading">
                 <span style={{ width: 10, height: 10, borderRadius: 5, background: colorOf(id), flex: 'none' }} />
                 <strong>{id}</strong>
-                <span style={{ marginLeft: 'auto', color: '#475569' }}>{load} / {tl.route.capacity}</span>
+                <span className="p12-vehicle-load">{load} / {tl.route.capacity}</span>
               </div>
-              <div style={{ color: '#475569', margin: '2px 0 5px' }}>{describe(tl, st, graph, failures[id])}</div>
-              <div style={{ height: 5, background: '#E5E7EB', borderRadius: 3 }}>
-                <div style={{ width: `${pct}%`, height: '100%', background: pct >= 100 ? '#475569' : colorOf(id), borderRadius: 3 }} />
+              <div className="p12-vehicle-description">{describe(tl, st, graph, failures[id])}</div>
+              <div className="p12-vehicle-progress" role="meter" aria-label={`${id} load`} aria-valuenow={load} aria-valuemin={0} aria-valuemax={tl.route.capacity}>
+                <div style={{ width: `${pct}%`, background: pct >= 100 ? '#F07879' : colorOf(id) }} />
               </div>
             </button>
           );
         })}
         {Object.keys(stopStatus).length > 0 && (
-          <div style={{ display: 'flex', gap: 10, marginTop: 8, fontSize: 12 }}>
+          <div className="p12-map-diff-legend">
             {(Object.keys(DIFF_COLOR) as DiffClass[]).map((k) => (
               <span key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ width: 10, height: 10, borderRadius: 5, border: `2.5px solid ${DIFF_COLOR[k]}`, boxSizing: 'border-box' }} />
