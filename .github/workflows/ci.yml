@@ -20,5 +20,5 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 9
-      - run: uv sync
+      - run: make setup
       - run: make check

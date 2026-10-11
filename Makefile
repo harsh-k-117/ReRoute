@@ -2,7 +2,7 @@
 
 setup:
 	uv sync
-	@if [ -f frontend/package.json ] && command -v pnpm >/dev/null 2>&1; then cd frontend && pnpm install --frozen-lockfile; fi
+	@if [ -f frontend/package.json ] && command -v pnpm >/dev/null 2>&1; then cd frontend && pnpm install --no-frozen-lockfile; fi
 
 dev:
 	uv run uvicorn api.main:app --reload
