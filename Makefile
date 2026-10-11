@@ -1,4 +1,4 @@
-.PHONY: setup dev check test fuzz demo types clean
+.PHONY: setup dev check test fuzz demo types scenarios clean
 
 setup:
 	uv sync
@@ -24,6 +24,9 @@ demo:
 
 types:
 	bash scripts/gen_types.sh
+
+scenarios:
+	uv run python scripts/gen_scenarios.py
 
 clean:
 	rm -rf .pytest_cache .ruff_cache .coverage htmlcov frontend/dist

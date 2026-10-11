@@ -1,0 +1,558 @@
+{
+  "description": "Road closure followed by a vehicle failure during the same shift.",
+  "disruptions": [
+    {
+      "a": "SANGAMWADI",
+      "b": "BUND_GARDEN",
+      "both_directions": true,
+      "end": 660,
+      "mode": "add_minutes",
+      "start": 540,
+      "type": "road_closure",
+      "value": 20.0
+    },
+    {
+      "at_time": 545,
+      "transfer_minutes": 10,
+      "type": "vehicle_failure",
+      "vehicle_id": "V02"
+    }
+  ],
+  "name": "cascade",
+  "scenario": {
+    "config": {
+      "return_to_depot": false,
+      "transfer_minutes": 10
+    },
+    "deliveries": [
+      {
+        "demand": 3,
+        "id": "D001",
+        "location_id": "SANGAMWADI",
+        "priority": 1,
+        "release_time": null,
+        "service_time": 5,
+        "window_close": 540,
+        "window_open": 510
+      },
+      {
+        "demand": 3,
+        "id": "D002",
+        "location_id": "BUND_GARDEN",
+        "priority": 1,
+        "release_time": null,
+        "service_time": 5,
+        "window_close": 565,
+        "window_open": 510
+      },
+      {
+        "demand": 1,
+        "id": "D003",
+        "location_id": "SANGAMWADI",
+        "priority": 1,
+        "release_time": null,
+        "service_time": 5,
+        "window_close": 558,
+        "window_open": 518
+      },
+      {
+        "demand": 2,
+        "id": "D004",
+        "location_id": "BUND_GARDEN",
+        "priority": 1,
+        "release_time": null,
+        "service_time": 5,
+        "window_close": 588,
+        "window_open": 518
+      },
+      {
+        "demand": 1,
+        "id": "D005",
+        "location_id": "SANGAMWADI",
+        "priority": 1,
+        "release_time": null,
+        "service_time": 15,
+        "window_close": 566,
+        "window_open": 526
+      },
+      {
+        "demand": 1,
+        "id": "D006",
+        "location_id": "BUND_GARDEN",
+        "priority": 1,
+        "release_time": null,
+        "service_time": 15,
+        "window_close": 596,
+        "window_open": 526
+      },
+      {
+        "demand": 1,
+        "id": "D007",
+        "location_id": "SANGAMWADI",
+        "priority": 1,
+        "release_time": null,
+        "service_time": 15,
+        "window_close": 564,
+        "window_open": 534
+      },
+      {
+        "demand": 3,
+        "id": "D008",
+        "location_id": "BUND_GARDEN",
+        "priority": 1,
+        "release_time": null,
+        "service_time": 15,
+        "window_close": 564,
+        "window_open": 534
+      },
+      {
+        "demand": 1,
+        "id": "D009",
+        "location_id": "KOREGAON_PARK",
+        "priority": 1,
+        "release_time": null,
+        "service_time": 15,
+        "window_close": 552,
+        "window_open": 512
+      },
+      {
+        "demand": 1,
+        "id": "D010",
+        "location_id": "SWARGATE",
+        "priority": 1,
+        "release_time": null,
+        "service_time": 15,
+        "window_close": 644,
+        "window_open": 574
+      },
+      {
+        "demand": 1,
+        "id": "D011",
+        "location_id": "CAMP",
+        "priority": 1,
+        "release_time": null,
+        "service_time": 15,
+        "window_close": 618,
+        "window_open": 578
+      },
+      {
+        "demand": 1,
+        "id": "D012",
+        "location_id": "BUND_GARDEN",
+        "priority": 1,
+        "release_time": null,
+        "service_time": 15,
+        "window_close": 603,
+        "window_open": 548
+      }
+    ],
+    "depot_id": "DEPOT",
+    "locations": [
+      {
+        "aliases": [
+          "Shivaji Nagar",
+          "Shivajinagar Bus Stand"
+        ],
+        "id": "DEPOT",
+        "name": "Shivajinagar",
+        "x": 0.0,
+        "y": 0.0
+      },
+      {
+        "aliases": [
+          "Deccan"
+        ],
+        "id": "DECCAN",
+        "name": "Deccan Gymkhana",
+        "x": 2.0,
+        "y": -1.0
+      },
+      {
+        "aliases": [
+          "Pune Camp"
+        ],
+        "id": "CAMP",
+        "name": "Camp",
+        "x": 5.8,
+        "y": -2.1
+      },
+      {
+        "aliases": [
+          "Swargate Bus Station"
+        ],
+        "id": "SWARGATE",
+        "name": "Swargate",
+        "x": 3.4,
+        "y": -5.8
+      },
+      {
+        "aliases": [
+          "Kothrud Depot"
+        ],
+        "id": "KOTHRUD",
+        "name": "Kothrud",
+        "x": -5.1,
+        "y": -4.4
+      },
+      {
+        "aliases": [
+          "Aundh Gaon"
+        ],
+        "id": "AUNDH",
+        "name": "Aundh",
+        "x": -5.4,
+        "y": 4.9
+      },
+      {
+        "aliases": [
+          "Baner Road"
+        ],
+        "id": "BANER",
+        "name": "Baner",
+        "x": -9.3,
+        "y": 6.8
+      },
+      {
+        "aliases": [
+          "KP",
+          "Koregaon Park Road"
+        ],
+        "id": "KOREGAON_PARK",
+        "name": "Koregaon Park",
+        "x": 7.4,
+        "y": 1.7
+      },
+      {
+        "aliases": [
+          "Yerwada"
+        ],
+        "id": "YERAWADA",
+        "name": "Yerawada",
+        "x": 9.1,
+        "y": 5.8
+      },
+      {
+        "aliases": [
+          "Sangamvadi",
+          "Sangamwadi Bridge"
+        ],
+        "id": "SANGAMWADI",
+        "name": "Sangamwadi",
+        "x": 6.6,
+        "y": 4.0
+      },
+      {
+        "aliases": [
+          "Bund Garden Road"
+        ],
+        "id": "BUND_GARDEN",
+        "name": "Bund Garden",
+        "x": 8.1,
+        "y": 3.4
+      },
+      {
+        "aliases": [
+          "Vimannagar"
+        ],
+        "id": "VIMAN_NAGAR",
+        "name": "Viman Nagar",
+        "x": 13.2,
+        "y": 7.2
+      },
+      {
+        "aliases": [
+          "Hadapsar Gaon"
+        ],
+        "id": "HADAPSAR",
+        "name": "Hadapsar",
+        "x": 12.0,
+        "y": -6.1
+      },
+      {
+        "aliases": [
+          "Kharadi Bypass"
+        ],
+        "id": "KHARADI",
+        "name": "Kharadi",
+        "x": 15.0,
+        "y": 0.8
+      }
+    ],
+    "name": "cascade",
+    "now": 480,
+    "seed": 7,
+    "start_time": 480,
+    "travel_times": [
+      [
+        0,
+        8,
+        22,
+        24,
+        24,
+        26,
+        41,
+        27,
+        38,
+        28,
+        31,
+        53,
+        48,
+        53
+      ],
+      [
+        8,
+        0,
+        14,
+        18,
+        28,
+        34,
+        49,
+        22,
+        35,
+        24,
+        27,
+        49,
+        40,
+        46
+      ],
+      [
+        22,
+        14,
+        0,
+        16,
+        39,
+        47,
+        62,
+        15,
+        30,
+        22,
+        21,
+        42,
+        26,
+        34
+      ],
+      [
+        24,
+        18,
+        16,
+        0,
+        31,
+        49,
+        63,
+        30,
+        46,
+        37,
+        37,
+        57,
+        31,
+        47
+      ],
+      [
+        24,
+        28,
+        39,
+        31,
+        0,
+        33,
+        42,
+        49,
+        62,
+        51,
+        54,
+        76,
+        61,
+        73
+      ],
+      [
+        26,
+        34,
+        47,
+        49,
+        33,
+        0,
+        16,
+        47,
+        51,
+        43,
+        48,
+        66,
+        73,
+        73
+      ],
+      [
+        41,
+        49,
+        62,
+        63,
+        42,
+        16,
+        0,
+        62,
+        65,
+        57,
+        63,
+        79,
+        88,
+        88
+      ],
+      [
+        27,
+        22,
+        15,
+        30,
+        49,
+        47,
+        62,
+        0,
+        16,
+        9,
+        7,
+        28,
+        32,
+        27
+      ],
+      [
+        38,
+        35,
+        30,
+        46,
+        62,
+        51,
+        65,
+        16,
+        0,
+        11,
+        10,
+        16,
+        43,
+        28
+      ],
+      [
+        28,
+        24,
+        22,
+        37,
+        51,
+        43,
+        57,
+        9,
+        11,
+        0,
+        6,
+        26,
+        41,
+        32
+      ],
+      [
+        31,
+        27,
+        21,
+        37,
+        54,
+        48,
+        63,
+        7,
+        10,
+        6,
+        0,
+        23,
+        36,
+        26
+      ],
+      [
+        53,
+        49,
+        42,
+        57,
+        76,
+        66,
+        79,
+        28,
+        16,
+        26,
+        23,
+        0,
+        47,
+        24
+      ],
+      [
+        48,
+        40,
+        26,
+        31,
+        61,
+        73,
+        88,
+        32,
+        43,
+        41,
+        36,
+        47,
+        0,
+        27
+      ],
+      [
+        53,
+        46,
+        34,
+        47,
+        73,
+        73,
+        88,
+        27,
+        28,
+        32,
+        26,
+        24,
+        27,
+        0
+      ]
+    ],
+    "vehicles": [
+      {
+        "aliases": [
+          "Van 1",
+          "Vehicle 1"
+        ],
+        "capacity": 9,
+        "id": "V01",
+        "name": "City van 01",
+        "shift_end": 720,
+        "start_location_id": "DEPOT"
+      },
+      {
+        "aliases": [
+          "Van 2",
+          "Vehicle 2"
+        ],
+        "capacity": 8,
+        "id": "V02",
+        "name": "City van 02",
+        "shift_end": 720,
+        "start_location_id": "DEPOT"
+      },
+      {
+        "aliases": [
+          "Van 3",
+          "Vehicle 3"
+        ],
+        "capacity": 10,
+        "id": "V03",
+        "name": "City van 03",
+        "shift_end": 720,
+        "start_location_id": "DEPOT"
+      },
+      {
+        "aliases": [
+          "Van 4",
+          "Vehicle 4"
+        ],
+        "capacity": 7,
+        "id": "V04",
+        "name": "City van 04",
+        "shift_end": 720,
+        "start_location_id": "DEPOT"
+      }
+    ]
+  }
+}
