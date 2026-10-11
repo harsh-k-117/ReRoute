@@ -7,3 +7,9 @@ _store = default_store()
 
 def get_store() -> SessionStore:
     return _store
+
+
+def set_store(store: SessionStore) -> None:
+    """Replace the active session store (used by upload confirm)."""
+    global _store  # noqa: PLW0603
+    _store = store

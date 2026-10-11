@@ -179,7 +179,6 @@ function SectionHeading({ id, eyebrow, title, description }: { id: string; eyebr
 function App() {
   const [scenarioName, setScenarioName] = useState("baseline");
   const { data, error, loading } = useInitialPlan(scenarioName);
-  const [scenarios, setScenarios] = useState<string[]>(["baseline", "impossible", "stress"]);
   const [revised, setRevised] = useState<Plan>();
   const [diff, setDiff] = useState<Diff>();
   const [activeReport, setActiveReport] = useState<{ passed: boolean; checks: { id: string; passed: boolean; details: string }[] }>();
@@ -208,7 +207,6 @@ function App() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [mobileNavOpen]);
-  useEffect(() => { api.scenarios().then((items) => setScenarios(items.map((item) => item.name))).catch(() => undefined); }, []);
   useEffect(() => { fetch("/city_map.json").then((response) => response.json() as Promise<CityMap>).then(setCity).catch(() => undefined); }, []);
   const loadedPlan = data ? (revised ?? data.plan) : undefined;
   const end = loadedPlan && data ? Math.max(data.scenario.start_time + 60, ...loadedPlan.routes.flatMap((route) => route.stops.map((stop) => stop.depart + 20))) : 0;
@@ -281,11 +279,6 @@ function App() {
         <header className="rr-topbar">
           <button ref={mobileNavTriggerRef} className="rr-mobile-menu" aria-label="Open navigation" aria-expanded={mobileNavOpen} aria-controls="rr-primary-navigation" onClick={() => setMobileNavOpen(true)}><Menu size={19} /></button>
           <div className="rr-mobile-brand"><span className="p12-brand-mark"><Route size={16} /></span><b>ReRoute</b></div>
-          <label className="p12-scenario">Scenario
-            <select value={scenarioName} onChange={(event) => { setScenarioName(event.target.value); setRevised(undefined); setDiff(undefined); setActiveClosure([]); setActiveFailures({}); }}>
-              {scenarios.map((name) => <option key={name}>{name}</option>)}
-            </select>
-          </label>
           <span className="rr-plan-version" title={displayedPlan.version_id}>PLAN <b>{displayedPlan.version_id.slice(0, 8)}</b></span>
           <span className={`rr-validation-state ${validation.passed ? "is-valid" : "is-invalid"}`} role="status">
             {validation.passed ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}{planStatus}

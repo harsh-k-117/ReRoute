@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -110,8 +111,15 @@ def _normalize_scenario(data: dict[str, Any]) -> dict[str, Any]:
 
 def _parse_clock(value: str, field: str) -> int:
     try:
-        hours_text, minutes_text = value.strip().split(":", maxsplit=1)
-        hours, minutes = int(hours_text), int(minutes_text)
+        match = re.fullmatch(r"\s*(\d{1,2}):(\d{2})\s*([ap]\.?m\.?)?\s*", value, re.I)
+        if match is None:
+            raise ValueError
+        hours, minutes = int(match.group(1)), int(match.group(2))
+        meridiem = match.group(3)
+        if meridiem:
+            if not 1 <= hours <= 12:
+                raise ValueError
+            hours = hours % 12 + (12 if meridiem.lower().startswith("p") else 0)
     except (ValueError, AttributeError) as exc:
         raise ValueError(f"{field} must be minutes or HH:MM, got {value!r}") from exc
     if not 0 <= hours <= 23 or not 0 <= minutes <= 59:

@@ -11,6 +11,8 @@ from data.importers import import_scenario_json
 from engine.construct import build_plan
 from verify.validator import validate
 
+_UPLOADED_SCENARIOS: dict[str, Scenario] = {}
+
 
 @dataclass
 class SessionStore:
@@ -53,6 +55,8 @@ class SessionStore:
 
 def load_scenario(name: str, scenario_dir: Path | None = None) -> Scenario:
     """Load a named scenario from the configured scenario directory."""
+    if name in _UPLOADED_SCENARIOS:
+        return _UPLOADED_SCENARIOS[name]
     root = scenario_dir or Path(__file__).parents[1] / "data" / "scenarios"
     path = root / f"{name}.json"
     if not path.is_file():
@@ -62,7 +66,12 @@ def load_scenario(name: str, scenario_dir: Path | None = None) -> Scenario:
 
 def available_scenarios(scenario_dir: Path | None = None) -> list[Scenario]:
     root = scenario_dir or Path(__file__).parents[1] / "data" / "scenarios"
-    return [import_scenario_json(path) for path in sorted(root.glob("*.json"))]
+    built_ins = [import_scenario_json(path) for path in sorted(root.glob("*.json"))]
+    return [*built_ins, *_UPLOADED_SCENARIOS.values()]
+
+
+def register_uploaded_scenario(scenario: Scenario) -> None:
+    _UPLOADED_SCENARIOS[scenario.name] = scenario
 
 
 def default_store() -> SessionStore:
