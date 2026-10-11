@@ -11,20 +11,24 @@ def prescreen_delivery(scenario: Scenario, delivery: Delivery) -> tuple[bool, li
     locations = {location.id for location in scenario.locations}
     reasons: list[Reason] = []
     if delivery.location_id not in locations:
-        reasons.append(Reason(
-            code=ReasonCode.UNKNOWN_LOCATION,
-            detail=f"Delivery {delivery.id} names unknown location {delivery.location_id}.",
-        ))
+        reasons.append(
+            Reason(
+                code=ReasonCode.UNKNOWN_LOCATION,
+                detail=f"Delivery {delivery.id} names unknown location {delivery.location_id}.",
+            )
+        )
         return False, reasons
     max_capacity = max((vehicle.capacity for vehicle in scenario.vehicles), default=0)
     if delivery.demand > max_capacity:
-        reasons.append(Reason(
-            code=ReasonCode.OVERSIZE,
-            detail=(
-                f"Demand {delivery.demand} exceeds every vehicle capacity "
-                f"(maximum {max_capacity})."
-            ),
-        ))
+        reasons.append(
+            Reason(
+                code=ReasonCode.OVERSIZE,
+                detail=(
+                    f"Demand {delivery.demand} exceeds every vehicle capacity "
+                    f"(maximum {max_capacity})."
+                ),
+            )
+        )
     reachable = False
     for vehicle in scenario.vehicles:
         arrival = scenario.start_time + travel_time(
@@ -36,11 +40,13 @@ def prescreen_delivery(scenario: Scenario, delivery: Delivery) -> tuple[bool, li
             reachable = True
             break
     if not reachable:
-        reasons.append(Reason(
-            code=ReasonCode.WINDOW_UNREACHABLE,
-            detail=(
-                f"No vehicle can reach {delivery.location_id} by window close "
-                f"{delivery.window_close}."
-            ),
-        ))
+        reasons.append(
+            Reason(
+                code=ReasonCode.WINDOW_UNREACHABLE,
+                detail=(
+                    f"No vehicle can reach {delivery.location_id} by window close "
+                    f"{delivery.window_close}."
+                ),
+            )
+        )
     return not reasons, reasons

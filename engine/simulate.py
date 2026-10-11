@@ -106,15 +106,19 @@ def simulate_route(
             )
         if vehicle.shift_end is not None and depart > vehicle.shift_end:
             violations.append(f"shift end exceeded by {depart - vehicle.shift_end} minutes")
-        result.append(original.model_copy(update={
-            "arrival": arrival,
-            "wait": wait,
-            "service_start": service_start,
-            "depart": depart,
-            "load_after": load,
-            "window_open": window_open,
-            "window_close": window_close,
-        }))
+        result.append(
+            original.model_copy(
+                update={
+                    "arrival": arrival,
+                    "wait": wait,
+                    "service_start": service_start,
+                    "depart": depart,
+                    "load_after": load,
+                    "window_open": window_open,
+                    "window_close": window_close,
+                }
+            )
+        )
         total_wait += wait
         location, clock = original.location_id, depart
 
@@ -122,14 +126,16 @@ def simulate_route(
         travel = travel_time(scenario, closures, location, scenario.depot_id, clock)
         arrival = clock + travel
         total_travel += travel
-        result.append(Stop(
-            kind=StopKind.DEPOT_END,
-            location_id=scenario.depot_id,
-            arrival=arrival,
-            service_start=arrival,
-            depart=arrival,
-            load_after=load,
-        ))
+        result.append(
+            Stop(
+                kind=StopKind.DEPOT_END,
+                location_id=scenario.depot_id,
+                arrival=arrival,
+                service_start=arrival,
+                depart=arrival,
+                load_after=load,
+            )
+        )
         if vehicle.shift_end is not None and arrival > vehicle.shift_end:
             violations.append(f"shift end exceeded by {arrival - vehicle.shift_end} minutes")
 

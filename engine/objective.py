@@ -27,10 +27,9 @@ def score(
                         moved += 1
     effort = sum(route.total_travel + route.total_wait for route in plan.routes)
     effort += stability_weight * moved
-    ids = ",".join(sorted(
-        stop.delivery_id
-        for route in plan.routes
-        for stop in route.stops
-        if stop.delivery_id
-    ))
+    ids = ",".join(
+        sorted(
+            stop.delivery_id for route in plan.routes for stop in route.stops if stop.delivery_id
+        )
+    )
     return (broken, moved, effort, ids)

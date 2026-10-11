@@ -15,20 +15,14 @@ def improve(scenario: Scenario, plan: Plan, iterations: int = 0, seed: int | Non
     for _ in range(max(0, iterations)):
         changed = False
         delivery_ids = sorted(
-            stop.delivery_id
-            for route in best.routes
-            for stop in route.stops
-            if stop.delivery_id
+            stop.delivery_id for route in best.routes for stop in route.stops if stop.delivery_id
         )
         for delivery_id in delivery_ids:
             delivery = next(item for item in scenario.deliveries if item.id == delivery_id)
             routes = []
             removed = False
             for route in best.routes:
-                stops = [
-                    stop for stop in route.stops
-                    if stop.delivery_id != delivery_id
-                ]
+                stops = [stop for stop in route.stops if stop.delivery_id != delivery_id]
                 if len(stops) != len(route.stops):
                     removed = True
                 routes.append(route.model_copy(update={"stops": stops}))
