@@ -13,12 +13,17 @@ from .routes.validate import router as validate_router
 
 app = FastAPI(title="ReRoute API", version="0.1.0")
 allowed_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://reroute-tan.vercel.app",
+]
+allowed_origins.extend(
     origin.strip()
     for origin in os.getenv(
         "REROUTE_CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
     ).split(",")
     if origin.strip()
-]
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
