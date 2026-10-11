@@ -7,7 +7,10 @@ router = APIRouter()
 
 @router.get("/scenarios")
 def list_scenarios() -> list[dict[str, object]]:
-    return [{"name": scenario.name} for scenario in available_scenarios()]
+    return [
+        {"name": scenario.name, "uploaded": scenario.name.startswith("uploaded-")}
+        for scenario in available_scenarios()
+    ]
 
 
 @router.get("/scenarios/{name}")

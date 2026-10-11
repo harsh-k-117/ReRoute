@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, TextIO
@@ -29,7 +30,10 @@ def _read_csv(source: str | bytes | Path | TextIO, label: str) -> list[dict[str,
             text = source
     else:
         text = source.read()
-    rows = list(csv.DictReader(io.StringIO(text.lstrip("\ufeff"))))
+    clean_text = text.lstrip("\ufeff")
+    sample = clean_text[:2048]
+    delimiter = ";" if sample.count(";") > sample.count(",") else ","
+    rows = list(csv.DictReader(io.StringIO(clean_text), delimiter=delimiter))
     if not rows:
         raise ValueError(f"{label} CSV has a header but no data rows")
     return [{str(k).strip(): (v or "").strip() for k, v in row.items() if k} for row in rows]
@@ -62,8 +66,15 @@ def _clock(value: Any, field: str, *, optional: bool = False) -> int | None:
         raise ValueError(f"CSV field {field!r} is required")
     if isinstance(value, str) and ":" in value:
         try:
-            hours_text, minutes_text = value.split(":", maxsplit=1)
-            hours, minutes = int(hours_text), int(minutes_text)
+            match = re.fullmatch(r"\s*(\d{1,2}):(\d{2})\s*([ap]\.?m\.?)?\s*", value, re.I)
+            if match is None:
+                raise ValueError
+            hours, minutes = int(match.group(1)), int(match.group(2))
+            meridiem = match.group(3)
+            if meridiem:
+                if not 1 <= hours <= 12:
+                    raise ValueError
+                hours = hours % 12 + (12 if meridiem.lower().startswith("p") else 0)
         except ValueError as exc:
             raise ValueError(f"CSV field {field!r} must be minutes or HH:MM") from exc
         if not 0 <= hours <= 23 or not 0 <= minutes <= 59:

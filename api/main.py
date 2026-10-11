@@ -6,6 +6,7 @@ from .routes.plan import router as plan_router
 from .routes.proposals import router as proposals_router
 from .routes.scenarios import router as scenarios_router
 from .routes.state import router as state_router
+from .routes.upload import router as upload_router
 from .routes.validate import router as validate_router
 
 app = FastAPI(title="ReRoute API", version="0.1.0")
@@ -17,6 +18,7 @@ app.add_middleware(
         "http://localhost:5174",
         "http://127.0.0.1:5174",
     ],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,3 +29,4 @@ app.include_router(state_router)
 app.include_router(validate_router)
 app.include_router(disruptions_router)
 app.include_router(proposals_router)
+app.include_router(upload_router)

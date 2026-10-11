@@ -303,6 +303,26 @@ frontend build or unit tests.
 
 ## Data and scenario format
 
+### Upload schedule
+
+The header's **Upload schedule** flow supports either scenario inputs or an
+existing schedule. Scenario inputs may be one JSON file, four CSV files
+(`locations`, `vehicles`, `deliveries`, and a square `matrix`), or a ZIP
+containing those CSVs. Existing schedules are CSV or JSON rows with
+`vehicle_id`, `sequence`, `stop_type`, and `delivery_id`, plus optional
+`planned_arrival`. Uploaded times are never trusted: the simulator recomputes
+arrival, wait, service start, departure, and load before validation.
+
+Times accept integer minutes, `HH:MM`, or `H:MM am/pm`. UTF-8 BOM and comma or
+semicolon CSV are supported. Files are limited to 5 MB; ZIP content is limited
+to 20 MB uncompressed and path traversal entries are rejected. Scenarios above
+200 deliveries or 15 vehicles receive a warning but remain usable. A missing
+matrix can be derived from x/y coordinates using the documented 30 km/h speed
+assumption, rounded up; this assumption is shown during review. Uploads are
+previewed before confirmation, so rejected uploads leave the current session
+unchanged. Downloadable micro-scenario templates are available at
+`/templates/{scenario_json,locations_csv,vehicles_csv,deliveries_csv,matrix_csv,schedule_csv}`.
+
 Example JSON scenarios live in [`data/scenarios/`](data/scenarios/):
 
 - `baseline.json` — initial planning walkthrough.
