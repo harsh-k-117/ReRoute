@@ -1,0 +1,25 @@
+{
+  "version_id":"micro-v1",
+  "scenario_ref":"micro",
+  "seed":7,
+  "routes":[
+    {"vehicle_id":"V1","total_travel":15,"total_wait":10,"stops":[
+      {"kind":"depot_start","location_id":"DEPOT","arrival":480,"wait":0,"service_start":480,"depart":480,"load_after":5},
+      {"kind":"delivery","delivery_id":"D1","location_id":"A","arrival":490,"wait":10,"service_start":500,"depart":505,"load_after":2,"window_open":500,"window_close":540},
+      {"kind":"delivery","delivery_id":"D2","location_id":"B","arrival":510,"wait":0,"service_start":510,"depart":515,"load_after":0,"window_open":510,"window_close":550}
+    ]},
+    {"vehicle_id":"V2","total_travel":30,"total_wait":0,"stops":[
+      {"kind":"depot_start","location_id":"DEPOT","arrival":480,"wait":0,"service_start":480,"depart":480,"load_after":6},
+      {"kind":"delivery","delivery_id":"D3","location_id":"C","arrival":500,"wait":0,"service_start":500,"depart":505,"load_after":4,"window_open":500,"window_close":550},
+      {"kind":"delivery","delivery_id":"D4","location_id":"E","arrival":510,"wait":0,"service_start":510,"depart":515,"load_after":2,"window_open":510,"window_close":560},
+      {"kind":"delivery","delivery_id":"D5","location_id":"C","arrival":520,"wait":0,"service_start":520,"depart":525,"load_after":0,"window_open":500,"window_close":560}
+    ]},
+    {"vehicle_id":"V3","total_travel":35,"total_wait":5,"stops":[
+      {"kind":"depot_start","location_id":"DEPOT","arrival":480,"wait":0,"service_start":480,"depart":480,"load_after":6},
+      {"kind":"delivery","delivery_id":"D6","location_id":"F","arrival":510,"wait":0,"service_start":510,"depart":515,"load_after":4,"window_open":510,"window_close":570},
+      {"kind":"delivery","delivery_id":"D7","location_id":"F","arrival":515,"wait":0,"service_start":515,"depart":520,"load_after":2,"window_open":510,"window_close":580},
+      {"kind":"delivery","delivery_id":"D8","location_id":"E","arrival":525,"wait":5,"service_start":530,"depart":535,"load_after":0,"window_open":530,"window_close":590}
+    ]}
+  ],
+  "unplaced":[]
+}

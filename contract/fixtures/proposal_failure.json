@@ -1,0 +1,15 @@
+{
+  "id":"proposal-failure-1",
+  "source":"text",
+  "original_text":"Van 2 broke down at Cedar at 10:30",
+  "disruption":{"type":"vehicle_failure","vehicle_id":"V2","at_time":630,"transfer_minutes":10},
+  "spans":[
+    {"field":"vehicle_id","start":0,"end":5},
+    {"field":"at_time","start":29,"end":34}
+  ],
+  "assumptions":["Failure time interpreted as 10:30 (630 minutes after midnight)."],
+  "warnings":[],
+  "rejections":[],
+  "status":"pending",
+  "impact_preview":null
+}

@@ -1,0 +1,21 @@
+{
+  "plan":{"version_id":"closure-v2","scenario_ref":"micro","routes":[],"unplaced":[],"created_from":"micro-v1","seed":7},
+  "previous_plan_ref":"micro-v1",
+  "diff":{"rows":[],"kept_count":0,"moved_count":0,"broken_count":0},
+  "validation_report":{"checks":[
+    {"id":"I1","passed":true,"details":"All deliveries accounted for."},
+    {"id":"I2","passed":true,"details":"Loads within capacity."},
+    {"id":"I3","passed":true,"details":"Service starts respect windows and waiting."},
+    {"id":"I4","passed":true,"details":"Matrix and closure travel times match."},
+    {"id":"I5","passed":true,"details":"No post-failure assignments."},
+    {"id":"I6","passed":true,"details":"Frozen stops preserved."},
+    {"id":"I7","passed":true,"details":"Pickup ordering is valid."},
+    {"id":"I8","passed":true,"details":"Changed deliveries have causes."},
+    {"id":"I9","passed":true,"details":"No unknown locations."},
+    {"id":"I10","passed":true,"details":"Text proposal requires confirmation."},
+    {"id":"I11","passed":true,"details":"Output is deterministic."},
+    {"id":"I12","passed":true,"details":"No-op behavior is stable."}
+  ],"passed":true},
+  "ledger_entries":[],
+  "trace":[]
+}

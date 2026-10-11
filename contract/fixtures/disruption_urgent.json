@@ -1,0 +1,1 @@
+{"type":"urgent_delivery","delivery":{"id":"NEW1","location_id":"C","demand":1,"window_open":650,"window_close":720,"service_time":5,"priority":2,"release_time":630},"report_time":630,"priority":2}

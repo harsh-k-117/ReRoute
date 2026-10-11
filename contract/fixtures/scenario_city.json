@@ -1,0 +1,39 @@
+{
+  "name": "micro",
+  "depot_id": "DEPOT",
+  "locations": [
+    {"id":"DEPOT","name":"Depot","aliases":[]},
+    {"id":"A","name":"Alder","aliases":[]},
+    {"id":"B","name":"Birch","aliases":[]},
+    {"id":"C","name":"Cedar","aliases":[]},
+    {"id":"E","name":"Elm","aliases":[]},
+    {"id":"F","name":"Fir","aliases":[]}
+  ],
+  "vehicles": [
+    {"id":"V1","name":"Van 1","aliases":[],"capacity":5,"start_location_id":"DEPOT"},
+    {"id":"V2","name":"Van 2","aliases":[],"capacity":6,"start_location_id":"DEPOT"},
+    {"id":"V3","name":"Van 3","aliases":[],"capacity":6,"start_location_id":"DEPOT"}
+  ],
+  "deliveries": [
+    {"id":"D1","location_id":"A","demand":3,"window_open":500,"window_close":540,"service_time":5},
+    {"id":"D2","location_id":"B","demand":2,"window_open":510,"window_close":550,"service_time":5},
+    {"id":"D3","location_id":"C","demand":2,"window_open":500,"window_close":550,"service_time":5},
+    {"id":"D4","location_id":"E","demand":2,"window_open":510,"window_close":560,"service_time":5},
+    {"id":"D5","location_id":"C","demand":2,"window_open":500,"window_close":560,"service_time":5},
+    {"id":"D6","location_id":"F","demand":2,"window_open":510,"window_close":570,"service_time":5},
+    {"id":"D7","location_id":"F","demand":2,"window_open":510,"window_close":580,"service_time":5},
+    {"id":"D8","location_id":"E","demand":2,"window_open":530,"window_close":590,"service_time":5}
+  ],
+  "travel_times": [
+    [0,10,15,20,25,30],
+    [10,0,5,10,15,20],
+    [15,5,0,5,10,15],
+    [20,10,5,0,5,10],
+    [25,15,10,5,0,5],
+    [30,20,15,10,5,0]
+  ],
+  "now": 480,
+  "start_time": 480,
+  "config": {"transfer_minutes":10},
+  "seed": 7
+}
