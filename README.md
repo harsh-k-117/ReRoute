@@ -68,7 +68,7 @@ yet.
 ### Target operational workflow
 
 ```mermaid
-flowchart LR
+flowchart TD
     A[Scenario input] --> B[Validate contract and references]
     B --> C[Prescreen deliveries]
     C --> D[Construct initial plan]
