@@ -57,12 +57,16 @@ def diagnose_unplaced(scenario: Scenario, delivery: Delivery) -> list[Reason]:
 
 def snapshot(scenario: Scenario, plan: Plan, now: int) -> PlanSnapshot:
     """Freeze completed and committed work and compute each vehicle's ready state."""
-    raise NotImplementedError
+    from replan.snapshot import snapshot as implementation
+
+    return implementation(scenario, plan, now)
 
 
 def replan(scenario: Scenario, plan: Plan, disruption: Disruption) -> ReplanResult:
     """Apply a confirmed disruption and produce a validated revised plan."""
-    raise NotImplementedError
+    from replan.replan import replan as implementation
+
+    return implementation(scenario, plan, disruption)
 
 
 def validate(
@@ -88,9 +92,13 @@ def validate(
 
 def classify(previous: Plan, revised: Plan) -> Diff:
     """Classify every delivery as kept, moved, or broken with a reason."""
-    raise NotImplementedError
+    from diff.classify import classify as implementation
+
+    return implementation(previous, revised)
 
 
 def interpret(text: str, scenario: Scenario) -> Proposal:
     """Interpret dispatcher text as a pending proposal; never apply it."""
-    raise NotImplementedError
+    from nlp.interpreter import interpret as implementation
+
+    return implementation(text, scenario)

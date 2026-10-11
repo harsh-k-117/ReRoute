@@ -5,10 +5,7 @@ import pytest
 from contract.models import Proposal
 from contract.signatures import interpret
 
-pytestmark = [
-    pytest.mark.acceptance,
-    pytest.mark.xfail(reason="not implemented: Phase 10 text interpreter", strict=False),
-]
+pytestmark = pytest.mark.acceptance
 
 
 def test_text_report_becomes_pending_proposal(scenario_micro):

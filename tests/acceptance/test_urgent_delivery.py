@@ -5,10 +5,7 @@ import pytest
 from contract.models import Delivery, UrgentDelivery
 from contract.signatures import replan
 
-pytestmark = [
-    pytest.mark.acceptance,
-    pytest.mark.xfail(reason="not implemented: Phase 8 replanner", strict=False),
-]
+pytestmark = pytest.mark.acceptance
 
 
 def _urgent(location_id="C", demand=1, close=700):

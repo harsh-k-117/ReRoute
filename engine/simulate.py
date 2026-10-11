@@ -38,10 +38,19 @@ def simulate_route(
     clock = scenario.start_time if start_time is None else start_time
     release_times = release_times or {}
     if start_load is None:
+        pickup_ids = {
+            stop.delivery_id
+            for stop in ordered
+            if stop.kind == StopKind.PICKUP and stop.delivery_id is not None
+        }
         start_load = sum(
             deliveries[stop.delivery_id].demand
             for stop in ordered
-            if stop.delivery_id is not None and stop.kind != StopKind.PICKUP
+            if (
+                stop.delivery_id is not None
+                and stop.kind != StopKind.PICKUP
+                and stop.delivery_id not in pickup_ids
+            )
         )
     load = start_load
     violations: list[str] = []

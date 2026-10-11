@@ -5,10 +5,7 @@ import pytest
 from contract.models import RoadClosure
 from contract.signatures import replan
 
-pytestmark = [
-    pytest.mark.acceptance,
-    pytest.mark.xfail(reason="not implemented: Phase 8 replanner", strict=False),
-]
+pytestmark = pytest.mark.acceptance
 
 
 def test_closure_replans_from_previous_plan(scenario_micro, plan_micro):

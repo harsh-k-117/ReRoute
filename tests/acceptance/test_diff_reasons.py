@@ -5,10 +5,7 @@ import pytest
 from contract.models import Delivery, RoadClosure, UrgentDelivery
 from contract.signatures import classify, replan
 
-pytestmark = [
-    pytest.mark.acceptance,
-    pytest.mark.xfail(reason="not implemented: Phase 9 diff ledger", strict=False),
-]
+pytestmark = pytest.mark.acceptance
 
 
 def test_diff_classifies_every_delivery(scenario_micro, plan_micro):

@@ -5,10 +5,7 @@ import pytest
 from contract.models import VehicleFailure
 from contract.signatures import replan, snapshot
 
-pytestmark = [
-    pytest.mark.acceptance,
-    pytest.mark.xfail(reason="not implemented: Phase 8 replanner", strict=False),
-]
+pytestmark = pytest.mark.acceptance
 
 
 def test_failure_replans_at_stated_time(scenario_micro, plan_micro):

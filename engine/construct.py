@@ -28,7 +28,12 @@ def _empty_stop(scenario: Scenario) -> Stop:
     )
 
 
-def _candidate(scenario: Scenario, vehicle_id: str, deliveries: Sequence[Delivery]) -> Route | None:
+def _candidate(
+    scenario: Scenario,
+    vehicle_id: str,
+    deliveries: Sequence[Delivery],
+    closures: Sequence = (),
+) -> Route | None:
     stops = [_empty_stop(scenario)]
     stops.extend(
         Stop(
@@ -42,7 +47,7 @@ def _candidate(scenario: Scenario, vehicle_id: str, deliveries: Sequence[Deliver
         )
         for delivery in deliveries
     )
-    route = simulate_route(scenario, vehicle_id, stops)
+    route = simulate_route(scenario, vehicle_id, stops, closures=closures)
     return route if not route.violations else None
 
 
@@ -51,6 +56,7 @@ def _route_with_insert(
     route: Route,
     delivery: Delivery,
     position: int,
+    closures: Sequence = (),
 ) -> Route | None:
     existing = [stop for stop in route.stops if stop.kind != StopKind.DEPOT_START]
     inserted = (
@@ -72,13 +78,17 @@ def _route_with_insert(
         next(item for item in scenario.deliveries if item.id == stop.delivery_id)
         for stop in inserted
     ]
-    return _candidate(scenario, route.vehicle_id, deliveries)
+    return _candidate(scenario, route.vehicle_id, deliveries, closures)
 
 
-def build_plan(scenario: Scenario, seed: int | None = None) -> Plan:
+def build_plan(
+    scenario: Scenario,
+    seed: int | None = None,
+    closures: Sequence = (),
+) -> Plan:
     seed = scenario.seed if seed is None else seed
     routes: dict[str, Route] = {
-        vehicle.id: _candidate(scenario, vehicle.id, [])
+        vehicle.id: _candidate(scenario, vehicle.id, [], closures)
         or Route(vehicle_id=vehicle.id, stops=[_empty_stop(scenario)])
         for vehicle in sorted(scenario.vehicles, key=lambda item: item.id)
     }
@@ -97,7 +107,7 @@ def build_plan(scenario: Scenario, seed: int | None = None) -> Plan:
             choices: list[tuple[int, str, int, Route]] = []
             for vehicle_id, route in routes.items():
                 for position in range(len(route.stops)):
-                    candidate = _route_with_insert(scenario, route, delivery, position)
+                    candidate = _route_with_insert(scenario, route, delivery, position, closures)
                     if candidate is not None:
                         choices.append(
                             (
