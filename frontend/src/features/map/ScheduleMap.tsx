@@ -172,8 +172,30 @@ export function ScheduleMap(props: ScheduleMapProps) {
           role="img"
           aria-label="Schematic map of vehicle routes at the simulation clock"
         >
-          <rect x={0} y={0} width={W} height={H} fill="#252B54" />
-          <polyline points={pts(city.river)} fill="none" stroke="#2778A8" strokeWidth={30} strokeLinejoin="round" opacity={0.65} />
+          <defs>
+            <linearGradient id="city-ground" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#20264b" />
+              <stop offset="0.55" stopColor="#292f59" />
+              <stop offset="1" stopColor="#202747" />
+            </linearGradient>
+            <linearGradient id="city-river" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stopColor="#2388ae" />
+              <stop offset="0.5" stopColor="#39b4c2" />
+              <stop offset="1" stopColor="#2388ae" />
+            </linearGradient>
+            <pattern id="city-grid" width="44" height="44" patternUnits="userSpaceOnUse">
+              <path d="M44 0H0V44" fill="none" stroke="#8d97bd" strokeOpacity="0.075" strokeWidth="1" />
+            </pattern>
+            <filter id="route-glow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.2" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+          </defs>
+          <rect x={0} y={0} width={W} height={H} fill="url(#city-ground)" />
+          <rect x={0} y={0} width={W} height={H} fill="url(#city-grid)" />
+          <polyline points={pts(city.river)} fill="none" stroke="#176b91" strokeWidth={38} strokeLinejoin="round" opacity={0.7} />
+          <polyline points={pts(city.river)} fill="none" stroke="url(#city-river)" strokeWidth={29} strokeLinejoin="round" opacity={0.82} />
+          <polyline points={pts(city.river)} fill="none" stroke="#b5f4ee" strokeWidth={1.2} strokeDasharray="3 10" strokeLinejoin="round" opacity={0.45} />
 
           {/* roads: casing first, fill on top */}
           {city.edges.map((e) => (
@@ -183,6 +205,10 @@ export function ScheduleMap(props: ScheduleMapProps) {
           {city.edges.map((e) => (
             <polyline key={`f${e.id}`} points={pts(e.pts)} fill="none" stroke={ROAD_FILL[e.kind]}
               strokeWidth={ROAD_PX[e.kind]} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          ))}
+          {city.edges.filter((e) => e.kind !== 'local').map((e) => (
+            <polyline key={`m${e.id}`} points={pts(e.pts)} fill="none" stroke="#a9b6dd" strokeOpacity="0.22"
+              strokeWidth={0.8} strokeDasharray="2 8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
           ))}
 
           {/* closures */}
@@ -210,9 +236,11 @@ export function ScheduleMap(props: ScheduleMapProps) {
             const id = tl.route.vehicleId; const col = colorOf(id);
             return (
               <g key={`r${id}`} opacity={dim(id)}>
-                <polyline points={pts(tl.fullPath)} fill="none" stroke={col} strokeWidth={5} opacity={0.28}
+                <polyline points={pts(tl.fullPath)} fill="none" stroke={col} strokeWidth={8} opacity={0.12}
                   strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-                <polyline points={pts(states[ri].traveled)} fill="none" stroke={col} strokeWidth={5}
+                <polyline points={pts(tl.fullPath)} fill="none" stroke={col} strokeWidth={4} opacity={0.42}
+                  strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+                <polyline points={pts(states[ri].traveled)} fill="none" stroke={col} strokeWidth={5} filter="url(#route-glow)"
                   strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
               </g>
             );
@@ -250,26 +278,26 @@ export function ScheduleMap(props: ScheduleMapProps) {
                   const diff = stopStatus[s.key];
                   const ring = diff ? DIFF_COLOR[diff] : col;
                   const hot = highlightedKey === s.key || (hover?.ri === ri && hover.si === si);
-                  const r = px(hot ? 11.5 : 9.5);
+                  const r = hot ? 14 : 12;
                   return (
                     <g key={`${s.key}-${si}`} style={{ cursor: 'pointer' }}
+                      transform={`translate(${l.x} ${l.y}) scale(${u})`}
                       onPointerDown={(e) => e.stopPropagation()}
                       onPointerEnter={() => setHoverStop({ ri, si }, s.key)}
                       onPointerLeave={() => setHoverStop(null, null)}>
-                      {hot && <circle cx={l.x} cy={l.y} r={r + px(5)} fill={ring} opacity={0.25} />}
-                      {s.kind === 'pickup'
-                        ? <rect x={l.x - r * 0.85} y={l.y - r * 0.85} width={r * 1.7} height={r * 1.7} rx={px(2)}
-                            transform={`rotate(45 ${l.x} ${l.y})`} fill={done ? col : '#fff'} stroke={ring} strokeWidth={px(2.5)} />
-                        : <circle cx={l.x} cy={l.y} r={r} fill={done ? col : '#fff'} stroke={ring} strokeWidth={px(2.5)} />}
-                      <text x={l.x} y={l.y + px(3.5)} fontSize={px(10)} fontWeight={700} textAnchor="middle"
-                        fill={done ? '#fff' : col} style={{ pointerEvents: 'none' }}>{si + 1}</text>
+                      {hot && <circle cy={-5} r={r + 5} fill={ring} opacity={0.24} />}
+                      <path d="M0 14C-2 10-12 0-12-6a12 12 0 1 1 24 0c0 6-10 16-12 20Z"
+                        fill={done ? col : '#fff'} stroke={ring} strokeWidth="1.8" />
+                      <circle cy="-6" r="6.5" fill={done ? '#fff' : col} opacity="0.96" />
+                      <text y="-3.2" fontSize="7.5" fontWeight={800} textAnchor="middle"
+                        fill={done ? col : '#fff'} style={{ pointerEvents: 'none' }}>{si + 1}</text>
                       {newKeys.includes(s.key) && (
-                        <text x={l.x} y={l.y - r - px(5)} fontSize={px(9)} fontWeight={700} textAnchor="middle" fill="#FFF7EB"
-                          stroke="#252B54" strokeWidth={px(3)} paintOrder="stroke">NEW</text>
+                        <text y="-22" fontSize="8" fontWeight={800} textAnchor="middle" fill="#fff8ef"
+                          stroke="#20264b" strokeWidth="3" paintOrder="stroke">NEW</text>
                       )}
                       {(hot || selectedVehicleId === id) && (
-                        <text x={l.x + r + px(4)} y={l.y + px(4)} fontSize={px(11)} fill="#FFF7EB" stroke="#252B54"
-                          strokeWidth={px(3)} paintOrder="stroke" style={{ pointerEvents: 'none' }}>{graph.name(s.locationId)}</text>
+                        <text x="17" y="-1" fontSize="10" fill="#fff8ef" stroke="#20264b"
+                          strokeWidth="3" paintOrder="stroke" style={{ pointerEvents: 'none' }}>{graph.name(s.locationId)}</text>
                       )}
                     </g>
                   );
@@ -286,13 +314,18 @@ export function ScheduleMap(props: ScheduleMapProps) {
               <g key={`v${id}`} opacity={dim(id)} style={{ cursor: 'pointer' }}
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => onSelectVehicle?.(selectedVehicleId === id ? null : id)}>
-                {st.status === 'servicing' && <circle cx={x} cy={y} r={px(19)} fill={col} opacity={0.22} />}
-                {st.status === 'waiting' && <circle cx={x} cy={y} r={px(18)} fill="none" stroke={col} strokeWidth={px(2)} strokeDasharray={`${px(3)} ${px(3)}`} />}
-                {selectedVehicleId === id && <circle cx={x} cy={y} r={px(21)} fill="none" stroke="#111827" strokeWidth={px(1.5)} />}
-                <circle cx={x} cy={y} r={px(13)} fill={failed ? '#B83F50' : col} stroke="#FFF7EB" strokeWidth={px(2.5)} />
-                <text x={x} y={y + px(3.5)} fontSize={px(10)} fontWeight={700} textAnchor="middle" fill="#fff" style={{ pointerEvents: 'none' }}>
-                  {id.replace(/^vehicle[-_ ]?/i, '').slice(0, 3)}
-                </text>
+                {st.status === 'servicing' && <circle cx={x} cy={y} r={px(23)} fill={col} opacity={0.2} />}
+                {st.status === 'waiting' && <circle cx={x} cy={y} r={px(21)} fill="none" stroke={col} strokeWidth={px(2)} strokeDasharray={`${px(3)} ${px(3)}`} />}
+                {selectedVehicleId === id && <circle cx={x} cy={y} r={px(25)} fill="none" stroke="#fff8ef" strokeWidth={px(1.5)} />}
+                <g transform={`translate(${x} ${y}) scale(${u})`}>
+                  <path d="M-15-7h16a2 2 0 0 1 2 2v2h6l6 6v6h-32v-14a2 2 0 0 1 2-2Z"
+                    fill={failed ? DIFF_COLOR.broken : col} stroke="#fff8ef" strokeWidth="1.6" strokeLinejoin="round" />
+                  <path d="M4-1h5l4 4H4Z" fill="#e4f4ff" stroke="#fff8ef" strokeWidth="0.8" strokeLinejoin="round" />
+                  <path d="M-9-3h8" stroke="#fff8ef" strokeWidth="1" strokeLinecap="round" opacity="0.85" />
+                  <circle cx="-8" cy="9" r="3.2" fill="#20264b" stroke="#fff8ef" strokeWidth="1.2" />
+                  <circle cx="9" cy="9" r="3.2" fill="#20264b" stroke="#fff8ef" strokeWidth="1.2" />
+                </g>
+                <title>{`${id}: ${describe(timelines[ri], st, graph, failures[id])}`}</title>
                 {failed && (
                   <path d={`M${x - px(8)} ${y - px(8)}L${x + px(8)} ${y + px(8)}M${x + px(8)} ${y - px(8)}L${x - px(8)} ${y + px(8)}`}
                     stroke={DIFF_COLOR.broken} strokeWidth={px(3)} strokeLinecap="round" />

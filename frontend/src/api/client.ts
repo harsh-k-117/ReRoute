@@ -35,9 +35,22 @@ export type DiffRow = {
   earliest_feasible_eta?: number | null;
 };
 export type Diff = { rows: DiffRow[]; kept_count: number; moved_count: number; broken_count: number };
+export type Disruption =
+  | {
+      type: "road_closure";
+      a: string;
+      b: string;
+      mode: "add_minutes" | "set_minutes" | "multiply";
+      value: number;
+      both_directions?: boolean;
+      start: number;
+      end: number;
+    }
+  | { type: "vehicle_failure"; vehicle_id: string; at_time: number; transfer_minutes?: number | null }
+  | { type: "urgent_delivery"; delivery: Scenario["deliveries"][number]; report_time: number; priority: number };
 export type Proposal = {
   id: string; source: "form" | "text"; original_text?: string | null;
-  disruption: Record<string, unknown>; spans: { field: string; start: number; end: number }[];
+  disruption: Disruption; spans: { field: string; start: number; end: number }[];
   assumptions: string[]; warnings: string[]; rejections: string[]; status: "pending" | "confirmed" | "discarded";
   impact_preview?: { plan: Plan; diff: Diff; validation_report: ValidationReport } | null;
 };
