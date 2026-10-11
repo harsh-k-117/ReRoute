@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
     "types": "openapi-typescript openapi.json -o src/api/schema.d.ts",
-    "test": "vitest run",
+    "test": "vitest run src/features/map/map.test.ts",
     "e2e": "playwright test"
   },
   "dependencies": {

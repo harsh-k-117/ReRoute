@@ -103,12 +103,14 @@ def invariant_i1(scenario: Scenario, plan: Plan) -> InvariantResult:
         if len(occurrences) > 2
         or (len(occurrences) == 2 and not any("pickup" in item.lower() for item in occurrences))
     ]
-    missing = [
-        delivery_id for delivery_id in sorted(all_delivery_ids) if not placements[delivery_id]
-    ]
     unplaced_known = {
         entry.delivery_id for entry in plan.unplaced if entry.delivery_id in all_delivery_ids
     }
+    missing = [
+        delivery_id
+        for delivery_id in sorted(all_delivery_ids)
+        if not placements[delivery_id] and delivery_id not in unplaced_known
+    ]
     extra_unplaced = sorted(
         entry.delivery_id for entry in plan.unplaced if entry.delivery_id not in all_delivery_ids
     )

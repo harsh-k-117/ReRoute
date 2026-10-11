@@ -4,8 +4,11 @@ The checked-in JSON files in `data/scenarios/` are generated demo bundles. Do no
 edit them by hand: change the generator or scenario-pack script, then run
 `make scenarios` to regenerate all seven files deterministically.
 
-All generated coordinates and travel times are synthetic. The project does not
-fetch map, traffic, or GPS data. The default city is Pune, with recognizable
+All generated coordinates and travel times remain synthetic and authoritative
+for planning. The frontend separately bundles an attributed OSM-derived Pune
+road display dataset under `frontend/public/`; it is not used to calculate
+travel times. The project does not fetch map, traffic, or GPS data at runtime.
+The default city is Pune, with recognizable
 place names and exact-match aliases for the text-input demo. Its featured closure
 edge is the synthetic `Sangamwadi` ↔ `Bund Garden` connection
 (`SANGAMWADI` ↔ `BUND_GARDEN`). Pune Municipal Corporation lists Sangam Bridge

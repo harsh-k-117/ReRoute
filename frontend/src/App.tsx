@@ -1,275 +1,176 @@
-import { useMemo, useState } from 'react';
-import {
-  AlertTriangle,
-  ArrowRight,
-  Check,
-  ChevronDown,
-  Clock3,
-  Download,
-  ExternalLink,
-  Fuel,
-  MapPin,
-  Menu,
-  MoreHorizontal,
-  Navigation,
-  Plus,
-  RefreshCw,
-  Route,
-  Search,
-  SlidersHorizontal,
-  Truck,
-  X,
-} from 'lucide-react';
+import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { AlertCircle, CheckCircle2, Clock3, Map, Pause, Play, RefreshCw, RotateCcw, Route, Truck, XCircle } from "lucide-react";
+import { useInitialPlan } from "./api/hooks";
+import { api, Diff, Plan, Proposal, Route as PlanRoute, Scenario, Stop } from "./api/client";
+import { minutes } from "./lib/format";
+import { scaleTime } from "./lib/timeScale";
+import { sessionStore, useSessionStore } from "./store/sessionStore";
+import "./styles/globals.css";
+import { ScheduleMap } from "./features/map/ScheduleMap";
+import { toMapRoutes } from "./features/map/adaptPlan";
+import type { CityMap } from "./features/map/cityGraph";
 
-type Stop = {
-  location: string;
-  arrival: string;
-  start: string;
-  end: string;
-  load: number;
-  kind?: 'wait';
-};
+const routeColors = ["#315f9f", "#7655a6", "#21807b", "#536b7d"];
 
-type VehiclePlan = {
-  id: string;
-  driver: string;
-  color: string;
-  capacity: number;
-  stops: Stop[];
-};
+function Kpi({ label, value, note, icon }: { label: string; value: string; note: string; icon: ReactNode }) {
+  return <article className="p12-kpi"><div className="p12-kpi-label">{icon}{label}</div><strong>{value}</strong><span>{note}</span></article>;
+}
 
-const baseVehicles: VehiclePlan[] = [
-  {
-    id: 'V1', driver: 'Van 1', color: '#668bff', capacity: 5,
-    stops: [
-      { location: 'Alder St', arrival: '08:10', start: '08:20', end: '08:25', load: 2, kind: 'wait' },
-      { location: 'Birch Ave', arrival: '08:30', start: '08:30', end: '08:35', load: 0 },
-    ],
-  },
-  {
-    id: 'V2', driver: 'Van 2', color: '#39b995', capacity: 6,
-    stops: [
-      { location: 'Cedar Way', arrival: '08:20', start: '08:20', end: '08:25', load: 4 },
-      { location: 'Elm Market', arrival: '08:30', start: '08:30', end: '08:35', load: 2 },
-      { location: 'Cedar Way', arrival: '08:40', start: '08:40', end: '08:45', load: 0 },
-    ],
-  },
-  {
-    id: 'V3', driver: 'Van 3', color: '#e4a24a', capacity: 6,
-    stops: [
-      { location: 'Fir Square', arrival: '08:30', start: '08:30', end: '08:35', load: 4 },
-      { location: 'Fir Square', arrival: '08:35', start: '08:35', end: '08:40', load: 2 },
-      { location: 'Elm Market', arrival: '08:45', start: '08:50', end: '08:55', load: 0, kind: 'wait' },
-    ],
-  },
-];
+function Gantt({ plan, scenario, clock }: { plan: Plan; scenario: Scenario; clock: number }) {
+  const { hoveredDelivery } = useSessionStore();
+  const stops = plan.routes.flatMap((route) => route.stops);
+  const end = Math.max(scenario.start_time + 60, ...stops.map((stop) => stop.depart + 20));
+  const start = scenario.start_time;
+  const axis = Array.from({ length: Math.ceil((end - start) / 30) + 1 }, (_, index) => start + index * 30);
+  return <div className="p12-gantt">
+    <div className="p12-axis"><span>VEHICLE / TIME</span><div>{axis.map((tick) => <span key={tick} style={{ left: `${scaleTime(tick, start, end)}%` }}>{minutes(tick)}</span>)}</div></div>
+    {plan.routes.map((route, index) => <div className="p12-route-row" key={route.vehicle_id}>
+      <div className="p12-route-label"><b>{route.vehicle_id}</b><span>{scenario.vehicles.find((vehicle) => vehicle.id === route.vehicle_id)?.name ?? "Vehicle"}</span></div>
+      <div className="p12-track">
+        {route.stops.map((stop, stopIndex) => <StopBlock key={`${route.vehicle_id}-${stopIndex}`} stop={stop} route={route} index={index} start={start} end={end} highlighted={hoveredDelivery === stop.delivery_id} />)}
+        <div className="p12-now" style={{ left: `${scaleTime(clock, start, end)}%` }} />
+      </div>
+    </div>)}
+    <div className="p12-axis-footer"><span /><span>Hatched segments indicate waiting before a delivery window.</span></div>
+  </div>;
+}
 
-const deliveries = [
-  { id: 'D1', customer: 'Alder Street Books', location: 'Alder', window: '08:20 – 09:00', vehicle: 'V1', load: '3 crates', status: 'On route', color: 'blue' },
-  { id: 'D2', customer: 'Birch & Co.', location: 'Birch', window: '08:30 – 09:10', vehicle: 'V1', load: '2 crates', status: 'On route', color: 'blue' },
-  { id: 'D3', customer: 'Cedar Clinic', location: 'Cedar', window: '08:20 – 09:10', vehicle: 'V2', load: '2 crates', status: 'On route', color: 'green' },
-  { id: 'D4', customer: 'Elm Corner Shop', location: 'Elm', window: '08:30 – 09:20', vehicle: 'V2', load: '2 crates', status: 'On route', color: 'green' },
-  { id: 'D5', customer: 'Cedar Grocers', location: 'Cedar', window: '08:20 – 09:20', vehicle: 'V2', load: '2 crates', status: 'On route', color: 'green' },
-  { id: 'D6', customer: 'Fir Pharmacy', location: 'Fir', window: '08:30 – 09:30', vehicle: 'V3', load: '2 crates', status: 'On route', color: 'amber' },
-  { id: 'D7', customer: 'Fir Hardware', location: 'Fir', window: '08:30 – 09:40', vehicle: 'V3', load: '2 crates', status: 'On route', color: 'amber' },
-  { id: 'D8', customer: 'Elm Florist', location: 'Elm', window: '08:50 – 09:50', vehicle: 'V3', load: '2 crates', status: 'On route', color: 'amber' },
-];
+function SimulationClock({ clock, start, end, playing, onClock, onPlaying, onReset }: { clock: number; start: number; end: number; playing: boolean; onClock: (value: number) => void; onPlaying: (value: boolean) => void; onReset: () => void }) {
+  return <section className="p12-clock-bar" aria-label="Simulation clock">
+    <button className="p12-small-button" onClick={() => onPlaying(!playing)}>{playing ? <Pause size={14} /> : <Play size={14} />} {playing ? "Pause" : "Play"}</button>
+    <button className="p12-small-button" onClick={onReset}><RotateCcw size={14} /> Reset</button>
+    <span className="p12-clock-label">SIMULATION CLOCK <b>{minutes(clock)}</b></span>
+    <input aria-label="Simulation time" type="range" min={start} max={end} value={clock} onChange={(event) => { onPlaying(false); onClock(Number(event.target.value)); }} />
+    <span className="p12-simulation-note">NOT LIVE GPS</span>
+  </section>;
+}
 
-const mapPoints = [
-  { id: 'Depot', x: 47, y: 51, type: 'depot' },
-  { id: 'Alder St', x: 24, y: 23 },
-  { id: 'Birch Ave', x: 15, y: 69 },
-  { id: 'Cedar Way', x: 69, y: 22 },
-  { id: 'Elm Market', x: 82, y: 67 },
-  { id: 'Fir Square', x: 50, y: 84 },
-];
+function StopBlock({ stop, route, index, start, end, highlighted }: { stop: Stop; route: PlanRoute; index: number; start: number; end: number; highlighted: boolean }) {
+  const left = scaleTime(stop.arrival, start, end);
+  const width = Math.max(2, scaleTime(stop.depart, start, end) - left);
+  return <div className={`p12-stop-block ${stop.wait ? "is-wait" : ""} ${highlighted ? "is-highlighted" : ""}`} style={{ left: `${left}%`, width: `${width}%`, borderColor: routeColors[index % routeColors.length] }} onMouseEnter={() => sessionStore.setHovered(stop.delivery_id ?? null)} onMouseLeave={() => sessionStore.setHovered(null)} title={`${stop.delivery_id ?? "Depot"} · arrival ${minutes(stop.arrival)} · wait ${stop.wait}m · depart ${minutes(stop.depart)}`}>
+    <span>{stop.delivery_id ?? "DEPOT"}</span>
+  </div>;
+}
 
-const routes = [
-  { color: '#668bff', points: '47,51 35,38 24,23 19,46 15,69' },
-  { color: '#39b995', points: '47,51 58,37 69,22 77,44 82,67 69,22' },
-  { color: '#e4a24a', points: '47,51 49,67 50,84 56,76 82,67' },
-];
+function LoadProfile({ plan, scenario }: { plan: Plan; scenario: Scenario }) {
+  const end = Math.max(scenario.start_time + 60, ...plan.routes.flatMap((route) => route.stops.map((stop) => stop.depart + 20)));
+  return <div className="p12-loads"><div className="p12-section-kicker">LOAD / CAPACITY</div>{plan.routes.map((route, index) => {
+    const vehicle = scenario.vehicles.find((item) => item.id === route.vehicle_id);
+    const points = route.stops.map((stop) => `${scaleTime(stop.depart, scenario.start_time, end)},${100 - (stop.load_after / (vehicle?.capacity || 1)) * 100}`).join(" ");
+    return <div className="p12-load-row" key={route.vehicle_id}><span>{route.vehicle_id}</span><svg viewBox="0 0 100 100" preserveAspectRatio="none"><line x1="0" y1="0" x2="100" y2="0" className="p12-capacity" /><polyline points={points} className="p12-load-line" style={{ stroke: routeColors[index % routeColors.length] }} /></svg><span>{vehicle?.capacity ?? 0}</span></div>;
+  })}</div>;
+}
+
+function StopTable({ plan, scenario }: { plan: Plan; scenario: Scenario }) {
+  const [sort, setSort] = useState<"arrival" | "load_after">("arrival");
+  const rows = useMemo(() => plan.routes.flatMap((route) => route.stops.filter((stop) => stop.delivery_id).map((stop) => ({ ...stop, vehicle_id: route.vehicle_id }))).sort((a, b) => a[sort] - b[sort]), [plan, sort]);
+  return <section className="p12-panel"><div className="p12-panel-heading"><div><h2>Stop schedule</h2><p>Exact simulator timings for every planned delivery.</p></div><label>Sort <select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)}><option value="arrival">Arrival</option><option value="load_after">Load</option></select></label></div><div className="p12-table-wrap"><table><thead><tr><th>Delivery</th><th>Vehicle</th><th>Location</th><th>Arrival</th><th>Wait</th><th>Start</th><th>Depart</th><th>Load</th></tr></thead><tbody>{rows.map((stop) => <tr key={stop.delivery_id} onMouseEnter={() => sessionStore.setHovered(stop.delivery_id ?? null)} onMouseLeave={() => sessionStore.setHovered(null)}><td><b>{stop.delivery_id}</b></td><td>{stop.vehicle_id}</td><td>{stop.location_id}</td><td>{minutes(stop.arrival)}</td><td>{stop.wait}m</td><td>{minutes(stop.service_start)}</td><td>{minutes(stop.depart)}</td><td>{stop.load_after}</td></tr>)}</tbody></table></div></section>;
+}
+
+function Unplaced({ plan }: { plan: Plan }) {
+  return <section className="p12-panel"><div className="p12-panel-heading"><div><h2>Unplaced deliveries</h2><p>Every unplaced delivery includes a reason from the engine.</p></div></div>{plan.unplaced.length ? plan.unplaced.map((item) => <article className="p12-unplaced" key={item.delivery_id}><b>{item.delivery_id}</b><span>{item.earliest_feasible_eta ? `Earliest feasible ETA ${minutes(item.earliest_feasible_eta)}` : "No feasible ETA found"}</span><ul>{item.reasons.map((reason) => <li key={`${item.delivery_id}-${reason.code}`}>{reason.detail}</li>)}</ul></article>) : <div className="p12-empty"><CheckCircle2 /> All deliveries placed in the current plan.</div>}</section>;
+}
+
+function DiffTable({ diff }: { diff: Diff }) {
+  const [filter, setFilter] = useState<"all" | Diff["rows"][number]["classification"]>("all");
+  const rows = diff.rows.filter((row) => filter === "all" || row.classification === filter);
+  return <section className="p12-panel"><div className="p12-panel-heading"><div><h2>Impact diff</h2><p>Every delivery is classified with a deterministic reason.</p></div><div className="p12-filter-chips">{(["all", "kept", "moved", "broken"] as const).map((item) => <button key={item} className={filter === item ? "selected" : ""} onClick={() => setFilter(item)}>{item} {item === "all" ? diff.rows.length : diff[`${item}_count` as "kept_count" | "moved_count" | "broken_count"]}</button>)}</div></div><div className="p12-table-wrap"><table><thead><tr><th>Delivery</th><th>Status</th><th>Before → after</th><th>Reason</th></tr></thead><tbody>{rows.map((row) => <tr key={row.delivery_id} onMouseEnter={() => sessionStore.setHovered(row.delivery_id)} onMouseLeave={() => sessionStore.setHovered(null)}><td><b>{row.delivery_id}</b>{row.badge && <small className="p12-new-badge">{row.badge}</small>}</td><td><span className={`p12-classification ${row.classification}`}>{row.classification}</span></td><td>{row.before_vehicle_id ?? "—"} → {row.after_vehicle_id ?? "—"}<br /><small>{minutes(row.before_eta)} → {minutes(row.after_eta)}</small></td><td>{row.sentence}{row.classification === "broken" && row.earliest_feasible_eta != null && <small className="p12-earliest">Earliest feasible ETA {minutes(row.earliest_feasible_eta)}</small>}</td></tr>)}</tbody></table></div></section>;
+}
+
+function CompareView({ before, after }: { before: Plan; after: Plan }) {
+  const routeStops = (plan: Plan) => plan.routes.flatMap((route) => route.stops.filter((stop) => stop.delivery_id).map((stop) => `${route.vehicle_id}: ${stop.delivery_id} @ ${minutes(stop.service_start)}`));
+  return <section className="p12-panel"><div className="p12-panel-heading"><div><h2>Plan comparison</h2><p>Original and revised plans share the same timing language.</p></div><span className="p12-neutral-badge">GHOST STOPS SHOWN IN OUTLINE</span></div><div className="p12-compare"><div><h3>Original <small>{before.version_id}</small></h3>{routeStops(before).map((item) => <div className="p12-compare-stop ghost" key={item}>{item}</div>)}</div><div><h3>Revised <small>{after.version_id}</small></h3>{routeStops(after).map((item) => <div className="p12-compare-stop" key={item}>{item}</div>)}</div></div></section>;
+}
+
+function VerifyPanel({ report, onValidate }: { report: { passed: boolean; checks: { id: string; passed: boolean; details: string }[] }; onValidate: () => void }) {
+  return <section className="p12-panel p12-verify"><div className="p12-panel-heading"><div><h2>{report.passed ? <CheckCircle2 /> : <XCircle />} Verify I1–I12</h2><p>Independent checks run on the currently displayed plan.</p></div><button className="p12-small-button" onClick={onValidate}>Re-validate</button></div><div className="p12-check-grid">{report.checks.map((check) => <div className={check.passed ? "check-ok" : "check-bad"} key={check.id}><b>{check.passed ? "✓" : "!"} {check.id}</b><span>{check.details}</span></div>)}</div>{!report.passed && <div className="p12-error-banner">Plan discarded: validation failed</div>}</section>;
+}
+
+function Limits() {
+  return <section className="p12-panel p12-limits"><h2>Method & limits</h2><p>The planner pre-screens impossible deliveries, constructs a deterministic regret-2 plan, improves it within a bounded budget, and validates every output before the confirm gate can commit it.</p><div className="p12-limit-columns"><div><h3>Assumptions</h3><ul><li>D1: integer minutes since midnight</li><li>D2: matrix travel times are authoritative</li><li>D3: hard capacity and delivery windows</li><li>D4: exact-match names only</li><li>D5: one disruption per report</li></ul></div><div><h3>Measured evidence</h3><p>Fuzz cases: <b>pending</b></p><p>Optimality gap: <b>pending</b></p><p>Performance benchmark: <b>pending</b></p></div></div></section>;
+}
+
+function HighlightedText({ proposal }: { proposal: Proposal }) {
+  const text = proposal.original_text;
+  if (!text) return null;
+  const spans = [...proposal.spans].sort((a, b) => a.start - b.start);
+  const parts: ReactNode[] = [];
+  let cursor = 0;
+  spans.forEach((span, index) => {
+    if (span.start > cursor) parts.push(<span key={`plain-${index}`}>{text.slice(cursor, span.start)}</span>);
+    parts.push(<mark key={`${span.field}-${index}`} title={span.field}>{text.slice(span.start, span.end)}</mark>);
+    cursor = span.end;
+  });
+  parts.push(<span key="plain-end">{text.slice(cursor)}</span>);
+  return <div className="p12-source-text"><b>Parsed report</b><span>{parts}</span></div>;
+}
+
+function DisruptionConsole({ scenario, onResult }: { scenario: Scenario; onResult: (result: { proposal: Proposal; revised?: Plan; diff?: Diff }) => void }) {
+  const [tab, setTab] = useState<"form" | "text">("form");
+  const [kind, setKind] = useState<"road_closure" | "vehicle_failure" | "urgent_delivery">("road_closure");
+  const [from, setFrom] = useState(scenario.locations[1]?.id ?? scenario.depot_id);
+  const [to, setTo] = useState(scenario.locations[2]?.id ?? scenario.depot_id);
+  const [vehicle, setVehicle] = useState(scenario.vehicles[0]?.id ?? "");
+  const [text, setText] = useState("");
+  const [proposal, setProposal] = useState<Proposal>();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const locationOptions = scenario.locations.map((location) => <option key={location.id} value={location.id}>{location.name} ({location.id})</option>);
+  const submit = async () => {
+    setBusy(true); setError("");
+    try {
+      const next = tab === "text" ? await api.interpret(text) : await api.preview(kind === "road_closure" ? { type: "road_closure", a: from, b: to, mode: "add_minutes", value: 20, both_directions: true, start: scenario.now, end: scenario.now + 120 } : kind === "vehicle_failure" ? { type: "vehicle_failure", vehicle_id: vehicle, at_time: scenario.now + 30, transfer_minutes: 10 } : { type: "urgent_delivery", report_time: scenario.now, priority: 2, delivery: { id: `NEW-${Date.now()}`, location_id: from, demand: 1, window_open: scenario.now, window_close: scenario.now + 240, service_time: 5, priority: 2, release_time: scenario.now } });
+      setProposal(next); onResult({ proposal: next });
+    } catch (reason) {
+      const message = reason instanceof Error ? reason.message : "The report could not be interpreted.";
+      setError(message);
+    } finally { setBusy(false); }
+  };
+  const confirm = async () => { if (!proposal || proposal.rejections.length) return; setBusy(true); try { const result = await api.confirm(proposal.id); setProposal({ ...proposal, status: "confirmed" }); onResult({ proposal: { ...proposal, status: "confirmed" }, revised: result.plan, diff: result.diff }); } catch (reason) { setError(reason instanceof Error ? reason.message : "Confirmation failed."); } finally { setBusy(false); } };
+  return <section className="p12-panel p12-disruption"><div className="p12-panel-heading"><div><h2>Disruption console</h2><p>Preview first; only a confirmed proposal can change the plan.</p></div><span className="p12-neutral-badge">SERVER GATE ENABLED</span></div><div className="p12-tabs"><button className={tab === "form" ? "selected" : ""} onClick={() => setTab("form")}>Form</button><button className={tab === "text" ? "selected" : ""} onClick={() => setTab("text")}>Text report</button></div>{tab === "form" ? <div className="p12-form-grid"><label>Event<select value={kind} onChange={(event) => setKind(event.target.value as typeof kind)}><option value="road_closure">Road closure</option><option value="vehicle_failure">Vehicle failure</option><option value="urgent_delivery">Urgent delivery</option></select></label>{kind === "vehicle_failure" ? <label>Vehicle<select value={vehicle} onChange={(event) => setVehicle(event.target.value)}>{scenario.vehicles.map((item) => <option key={item.id}>{item.id}</option>)}</select></label> : <><label>Location A<select value={from} onChange={(event) => setFrom(event.target.value)}>{locationOptions}</select></label>{kind === "road_closure" && <label>Location B<select value={to} onChange={(event) => setTo(event.target.value)}>{locationOptions}</select></label>}</>}<button className="p12-primary-button" onClick={submit} disabled={busy}>{busy ? "Working…" : "Preview impact"}</button></div> : <div className="p12-text-form"><textarea value={text} onChange={(event) => setText(event.target.value)} placeholder="Example: Van 2 broke down at Cedar at 10:30" rows={3} /><button className="p12-primary-button" onClick={submit} disabled={busy || !text.trim()}>Interpret report</button></div>}{error && <div className="p12-error-banner">{error}</div>}{proposal && <div className="p12-confirm-card"><div><b>{proposal.status === "pending" ? "Pending confirmation" : "Confirmed"}</b><span>{proposal.original_text ?? `${String(proposal.disruption.type)} proposal`}</span></div><HighlightedText proposal={proposal} />{proposal.assumptions.length > 0 && <div className="p12-assumptions"><b>Assumptions</b>{proposal.assumptions.map((item) => <span key={item}>{item}</span>)}</div>}{proposal.rejections.length > 0 && <div className="p12-rejections"><b>Rejected</b>{proposal.rejections.map((item) => <span key={item}>{item}</span>)}</div>}{proposal.impact_preview && <div className="p12-preview-counts">Preview: {proposal.impact_preview.diff.kept_count} kept · {proposal.impact_preview.diff.moved_count} moved · {proposal.impact_preview.diff.broken_count} broken</div>}<div className="p12-confirm-actions"><button className="p12-primary-button" disabled={busy || proposal.status !== "pending" || proposal.rejections.length > 0} onClick={confirm}>Confirm proposal</button><button className="p12-small-button" onClick={() => { void api.discard(proposal.id); setProposal(undefined); }}>Discard</button></div></div>}</section>;
+}
 
 function App() {
-  const [selectedRange, setSelectedRange] = useState('Today, Oct 11');
-  const [eventType, setEventType] = useState<'closure' | 'failure' | 'urgent'>('closure');
-  const [previewState, setPreviewState] = useState<'idle' | 'preview' | 'confirmed'>('idle');
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [activeNav, setActiveNav] = useState('Dispatch board');
-
-  const visibleDeliveries = useMemo(() => deliveries.filter((delivery) =>
-    `${delivery.id} ${delivery.customer} ${delivery.location} ${delivery.vehicle}`.toLowerCase().includes(query.toLowerCase()),
-  ), [query]);
-
-  const previewDisruption = () => setPreviewState('preview');
-  const confirmDisruption = () => setPreviewState('confirmed');
-
-  return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand-row">
-          <div className="brand-mark"><Route size={19} strokeWidth={2.4} /></div>
-          <span>reroute<span className="brand-dot">.</span></span>
-          <button className="icon-button sidebar-menu" aria-label="Collapse navigation"><Menu size={18} /></button>
-        </div>
-        <div className="workspace-switch">
-          <div className="workspace-avatar">N</div>
-          <div className="workspace-copy"><b>Northstar Supply</b><span>Dispatch workspace</span></div>
-          <ChevronDown size={15} className="muted-icon" />
-        </div>
-        <div className="side-label">WORKSPACE</div>
-        <nav className="main-nav" aria-label="Main navigation">
-          {[
-            { name: 'Dispatch board', icon: Navigation },
-            { name: 'Deliveries', icon: MapPin, count: '8' },
-            { name: 'Fleet', icon: Truck },
-          ].map(({ name, icon: Icon, count }) => (
-            <button key={name} className={`nav-item ${activeNav === name ? 'active' : ''}`} onClick={() => setActiveNav(name)}>
-              <Icon size={17} /><span>{name}</span>{count && <span className="nav-count">{count}</span>}
-            </button>
-          ))}
-        </nav>
-        <div className="side-label scenarios-label">SCENARIOS</div>
-        <button className="scenario-link active-scenario"><span className="scenario-dot" />Morning run <span className="scenario-live">LIVE</span></button>
-        <button className="scenario-link"><span className="scenario-dot scenario-dot-gray" />Micro fixture</button>
-        <button className="scenario-add"><Plus size={15} /> Create scenario</button>
-        <div className="sidebar-bottom">
-          <div className="status-card"><div className="status-heading"><span className="green-pulse" /> Engine status</div><div className="status-sub">Demo mode <span>Local data</span></div></div>
-          <div className="profile-row"><div className="profile-avatar">HK</div><div className="profile-copy"><b>Harsh Kumar</b><span>Dispatcher</span></div><MoreHorizontal size={18} className="muted-icon" /></div>
-        </div>
-      </aside>
-
-      <main className="main-content">
-        <header className="topbar">
-          <div className="breadcrumbs"><span>Operations</span><span className="crumb-slash">/</span><b>{activeNav}</b></div>
-          <div className="topbar-actions">
-            <span className="demo-pill"><span /> DEMO DATA</span>
-            <button className="icon-button notification-button" aria-label="Notifications"><span className="notification-dot" /> <AlertTriangle size={17} /></button>
-            <div className="top-avatar">HK</div>
-          </div>
-        </header>
-
-        <div className="page-wrap">
-          <section className="page-heading">
-            <div>
-              <div className="eyebrow">SUNDAY, OCTOBER 11, 2026 <span className="eyebrow-dot">·</span> MORNING SHIFT</div>
-              <h1>Dispatch board</h1>
-              <p className="heading-subtitle">Your fleet at a glance. Plans change — stay one step ahead.</p>
-            </div>
-            <div className="heading-actions">
-              <button className="button button-quiet" onClick={() => setPreviewState('idle')}><RefreshCw size={15} /> Reset view</button>
-              <div className="dropdown-wrap">
-                <button className="button button-outline" onClick={() => setMenuOpen(!menuOpen)}><Download size={15} /> Export <ChevronDown size={14} /></button>
-                {menuOpen && <div className="dropdown-menu"><button onClick={() => setMenuOpen(false)}>Export plan as CSV</button><button onClick={() => setMenuOpen(false)}>Download route summary</button></div>}
-              </div>
-              <button className="button button-primary" onClick={() => { setEventType('closure'); setPreviewState('idle'); document.getElementById('disruption-panel')?.scrollIntoView({ behavior: 'smooth' }); }}><Plus size={16} /> Add disruption</button>
-            </div>
-          </section>
-
-          <section className="kpi-grid" aria-label="Plan summary">
-            <KpiCard label="Deliveries planned" value="8" detail="All assigned" icon={<MapPin size={16} />} trend="All clear" trendKind="positive" />
-            <KpiCard label="Vehicles on route" value="3" detail="of 3 available" icon={<Truck size={17} />} trend="100% fleet" trendKind="neutral" />
-            <KpiCard label="Planned travel time" value="80" unit="min" detail="15 min total waiting" icon={<Route size={16} />} trend="On schedule" trendKind="positive" />
-            <KpiCard label="Window risk" value="0" detail="Stops at risk" icon={<Clock3 size={16} />} trend="On schedule" trendKind="positive" />
-          </section>
-
-          <section className="panel map-panel">
-            <div className="panel-header map-panel-header">
-              <div><div className="panel-title">Fleet overview <span className="live-badge"><span /> EXAMPLE PLAN</span></div><div className="panel-subtitle">Schematic view · Not to scale</div></div>
-              <div className="map-header-actions"><button className="select-button" onClick={() => setSelectedRange(selectedRange === 'Today, Oct 11' ? 'Tomorrow, Oct 12' : 'Today, Oct 11')}>{selectedRange}<ChevronDown size={14} /></button><button className="square-button" aria-label="Map settings"><SlidersHorizontal size={16} /></button><button className="square-button" aria-label="Open map details"><ExternalLink size={15} /></button></div>
-            </div>
-            <div className="map-body">
-              <div className="schematic-map" role="img" aria-label="Schematic route map showing three delivery vehicle routes from the depot">
-                <div className="map-grid" />
-                <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="route-svg" aria-hidden="true">
-                  <path d="M5 17 L29 17 L29 34 L43 34 L43 52 L58 52 L58 72 L96 72" className="road road-main" />
-                  <path d="M12 83 L27 83 L27 66 L43 66 L43 52 L67 52 L67 30 L91 30" className="road" />
-                  <path d="M8 43 L26 43 L26 34 L43 34 M58 52 L76 52 L76 72 M43 66 L57 66 L57 91" className="road" />
-                  {routes.map((route) => <polyline key={route.color} points={route.points} fill="none" stroke={route.color} strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" opacity=".93" />)}
-                  {mapPoints.map((point) => <g key={point.id} className="map-point" transform={`translate(${point.x},${point.y})`}>
-                    {point.type === 'depot' ? <><circle r="4.2" className="depot-ring" /><circle r="2.5" className="depot-core" /><text x="0" y="8" textAnchor="middle" className="map-label depot-label">DEPOT</text></> : <><circle r="2.7" className="stop-halo" /><circle r="1.65" className="stop-core" /><text x="0" y={point.y < 30 ? -5 : 7} textAnchor="middle" className="map-label">{point.id}</text></>}
-                  </g>)}
-                  <g className="truck-marker" transform="translate(35,38)"><circle r="3.8" /><text y="1.3" textAnchor="middle">1</text></g>
-                  <g className="truck-marker green-marker" transform="translate(77,44)"><circle r="3.8" /><text y="1.3" textAnchor="middle">2</text></g>
-                  <g className="truck-marker amber-marker" transform="translate(49,68)"><circle r="3.8" /><text y="1.3" textAnchor="middle">3</text></g>
-                </svg>
-                <div className="map-attribution">Local schematic · No live map data</div>
-              </div>
-              <div className="route-legend">
-                <div className="legend-heading">ACTIVE ROUTES <span>3</span></div>
-                {baseVehicles.map((vehicle) => <div className="legend-route" key={vehicle.id}><span className="route-swatch" style={{ backgroundColor: vehicle.color }} /><div className="legend-route-copy"><b>{vehicle.id} <span>{vehicle.driver}</span></b><small>{vehicle.stops.length} stops <i>·</i> {vehicle.capacity} crate capacity</small></div><button className="legend-more" aria-label={`More options for ${vehicle.id}`}><MoreHorizontal size={17} /></button></div>)}
-                <div className="legend-divider" />
-                <div className="legend-meta"><span><span className="legend-symbol depot-symbol" /> Depot</span><span><span className="legend-symbol stop-symbol" /> Delivery stop</span></div>
-                <div className="map-tip"><Fuel size={14} /><span>Vehicle loads stay within capacity across the example routes.</span></div>
-              </div>
-            </div>
-            <div className="map-footer"><span><span className="fresh-dot" /> Example plan · 08:00 start</span><span>Micro fixture <button className="text-link">View scenario details <ArrowRight size={13} /></button></span></div>
-          </section>
-
-          <section className="panel disruption-panel" id="disruption-panel">
-            <div className="panel-header disruption-heading">
-              <div className="disruption-title-wrap"><div className="disruption-icon"><AlertTriangle size={17} /></div><div><div className="panel-title">Disruption simulator</div><div className="panel-subtitle">Preview a change before it reaches your plan.</div></div></div>
-              <span className="preview-only-tag">LOCAL PREVIEW ONLY</span>
-            </div>
-            {previewState === 'idle' ? <div className="disruption-content">
-              <div className="event-tabs" role="tablist" aria-label="Disruption type">
-                <button className={eventType === 'closure' ? 'selected' : ''} onClick={() => setEventType('closure')}><Route size={15} /> Road closure</button>
-                <button className={eventType === 'failure' ? 'selected' : ''} onClick={() => setEventType('failure')}><Truck size={15} /> Vehicle failure</button>
-                <button className={eventType === 'urgent' ? 'selected' : ''} onClick={() => setEventType('urgent')}><Plus size={15} /> Urgent delivery</button>
-              </div>
-              <div className="event-form">
-                {eventType === 'closure' && <><FormField label="FROM LOCATION"><select defaultValue="Cedar Way"><option>Cedar Way</option><option>Alder St</option><option>Birch Ave</option><option>Elm Market</option><option>Fir Square</option></select></FormField><FormField label="TO LOCATION"><select defaultValue="Elm Market"><option>Elm Market</option><option>Alder St</option><option>Birch Ave</option><option>Cedar Way</option><option>Fir Square</option></select></FormField><FormField label="DELAY"><select defaultValue="+15 min"><option>+10 min</option><option>+15 min</option><option>+30 min</option><option>+45 min</option></select></FormField><FormField label="ACTIVE PERIOD"><select defaultValue="08:00 – 10:00"><option>08:00 – 10:00</option><option>08:30 – 09:30</option><option>09:00 – 11:00</option></select></FormField></>}
-                {eventType === 'failure' && <><FormField label="VEHICLE"><select defaultValue="V2"><option>V1</option><option>V2</option><option>V3</option></select></FormField><FormField label="FAILURE TIME"><select defaultValue="08:25"><option>08:15</option><option>08:25</option><option>08:35</option><option>08:45</option></select></FormField><FormField label="LOCATION"><select defaultValue="Cedar Way"><option>Alder St</option><option>Birch Ave</option><option>Cedar Way</option><option>Elm Market</option><option>Fir Square</option></select></FormField><div className="field-note"><AlertTriangle size={14} /> Completed stops remain fixed in the revised plan.</div></>}
-                {eventType === 'urgent' && <><FormField label="DELIVERY LOCATION"><select defaultValue="Birch Ave"><option>Alder St</option><option>Birch Ave</option><option>Cedar Way</option><option>Elm Market</option><option>Fir Square</option></select></FormField><FormField label="LOAD"><select defaultValue="1 crate"><option>1 crate</option><option>2 crates</option><option>3 crates</option></select></FormField><FormField label="TIME WINDOW"><select defaultValue="09:00 – 10:00"><option>08:30 – 09:30</option><option>09:00 – 10:00</option><option>10:00 – 11:00</option></select></FormField><FormField label="PRIORITY"><select defaultValue="Urgent"><option>Urgent</option><option>High</option></select></FormField></>}
-              </div>
-              <div className="disruption-actions"><span className="form-hint"><Check size={14} /> Changes require dispatcher confirmation</span><button className="button button-dark" onClick={previewDisruption}>Preview impact <ArrowRight size={15} /></button></div>
-            </div> : <div className="preview-result">
-              <div className={`preview-status ${previewState === 'confirmed' ? 'confirmed' : ''}`}><span>{previewState === 'confirmed' ? <Check size={15} /> : <AlertTriangle size={15} />}</span><div><b>{previewState === 'confirmed' ? 'Demo change confirmed' : 'Sample impact ready to review'}</b><small>{previewState === 'confirmed' ? 'This is a local visualization only; no dispatch system was updated.' : `Static ${eventType === 'closure' ? 'road closure' : eventType === 'failure' ? 'vehicle failure' : 'urgent delivery'} example — not calculated by the optimization engine.`}</small></div></div>
-              <div className="impact-summary"><div><span>DELIVERIES</span><b>7 kept <i>·</i> 1 moved</b></div><div><span>WINDOWS AT RISK</span><b className="risk-value">1 <small>+5 min late</small></b></div><div><span>VEHICLES AFFECTED</span><b>V-02 <small>re-sequenced</small></b></div><div><span>CAPACITY</span><b className="capacity-good"><Check size={14} /> Within limits</b></div></div>
-              <div className="preview-footer"><span><span className="diff-dot moved-dot" /> Sample diff: D5 moved from V2 to V3 <span className="reason-text">· Example only; route changes are not computed yet.</span></span><div>{previewState === 'preview' ? <><button className="button button-quiet" onClick={() => setPreviewState('idle')}>Discard</button><button className="button button-primary" onClick={confirmDisruption}>Confirm change <Check size={15} /></button></> : <button className="button button-outline" onClick={() => setPreviewState('idle')}>New preview <RefreshCw size={14} /></button>}</div></div>
-              </div>}
-          </section>
-
-          <section className="panel timeline-panel">
-            <div className="panel-header timeline-header"><div><div className="panel-title">Route timeline <span className="stop-count">8 stops</span></div><div className="panel-subtitle">Arrival, waiting and service time by vehicle.</div></div><button className="select-button compact-select">Today <ChevronDown size={14} /></button></div>
-            <div className="timeline-content">
-              <div className="time-axis"><span className="axis-spacer" />{['08:00', '08:30', '09:00', '09:30', '10:00', '10:30'].map((t) => <span key={t}>{t}</span>)}</div>
-              {baseVehicles.map((vehicle) => <div className="timeline-row" key={vehicle.id}>
-                <div className="timeline-vehicle"><span className="vehicle-color" style={{ backgroundColor: vehicle.color }} /><div><b>{vehicle.id}</b><small>{vehicle.driver}</small></div></div>
-                <div className="timeline-track"><div className="now-line"><span>NOW</span></div>
-                  {vehicle.stops.map((stop, index) => <div key={`${stop.location}-${index}`} className={`stop-block ${stop.kind === 'wait' ? 'has-wait' : ''}`} style={{ left: getTimelineLeft(stop.start), width: stop.kind === 'wait' ? '8.5%' : '5.4%', borderColor: vehicle.color, backgroundColor: `${vehicle.color}1c` }} title={`${stop.location}: arrival ${stop.arrival}, service ${stop.start}–${stop.end}`}><span className="stop-block-dot" style={{ backgroundColor: vehicle.color }} /><span>{stop.location}</span><small>{stop.kind === 'wait' ? `Wait · ${stop.arrival}` : stop.start}</small></div>)}
-                </div>
-              </div>)}
-              <div className="timeline-legend"><span><i className="legend-service" /> Service stop</span><span><i className="legend-wait" /> Waiting for window</span><span className="arrival-note"><Clock3 size={13} /> Labels show service start; hover for arrival time</span></div>
-            </div>
-          </section>
-
-          <section className="panel deliveries-panel">
-            <div className="panel-header deliveries-header"><div><div className="panel-title">Delivery plan <span className="stop-count">8 total</span></div><div className="panel-subtitle">Every delivery accounted for in the current plan.</div></div><div className="table-actions"><label className="search-box"><Search size={14} /><input placeholder="Search deliveries" value={query} onChange={(event) => setQuery(event.target.value)} /></label><button className="square-button" aria-label="Filter deliveries"><SlidersHorizontal size={16} /></button></div></div>
-            <div className="table-scroll"><table><thead><tr><th>DELIVERY</th><th>LOCATION</th><th>TIME WINDOW</th><th>VEHICLE</th><th>LOAD</th><th>STATUS</th><th /></tr></thead><tbody>{visibleDeliveries.map((delivery) => <tr key={delivery.id}><td><div className="delivery-name"><span>{delivery.id}</span><b>{delivery.customer}</b></div></td><td><span className="location-cell"><MapPin size={13} />{delivery.location}</span></td><td>{delivery.window}</td><td><span className={`vehicle-pill ${delivery.color}`}><i />{delivery.vehicle}</span></td><td>{delivery.load}</td><td><span className="status-pill"><i />{delivery.status}</span></td><td><button className="row-more" aria-label={`More for ${delivery.id}`}><MoreHorizontal size={17} /></button></td></tr>)}</tbody></table>{visibleDeliveries.length === 0 && <div className="empty-search">No deliveries match “{query}”.</div>}</div>
-            <div className="table-footer"><span>Showing <b>{visibleDeliveries.length}</b> of 8 deliveries <span className="footer-separator">·</span> Scenario: <b>Micro fixture</b></span><button className="text-link" onClick={() => setQuery('')}>Clear filters <X size={13} /></button></div>
-          </section>
-
-          <footer className="page-footer"><span>ReRoute <b>·</b> Hackathon demo</span><span>Plans shown are illustrative local data <i>·</i> No live maps or GPS</span></footer>
-        </div>
-      </main>
-    </div>
-  );
-}
-
-function KpiCard({ label, value, unit, detail, icon, trend, trendKind, trendIcon }: { label: string; value: string; unit?: string; detail: string; icon: React.ReactNode; trend: string; trendKind: string; trendIcon?: React.ReactNode }) {
-  return <div className="kpi-card"><div className="kpi-top"><span>{label}</span><span className="kpi-icon">{icon}</span></div><div className="kpi-value">{value}<small>{unit}</small></div><div className="kpi-bottom"><span>{detail}</span><span className={`kpi-trend ${trendKind}`}>{trendIcon}{trend}</span></div></div>;
-}
-
-function FormField({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="form-field"><span>{label}</span>{children}</label>;
-}
-
-function getTimelineLeft(time: string) {
-  const [hours, minutes] = time.split(':').map(Number);
-  const minutesFromStart = (hours - 8) * 60 + minutes;
-  return `${Math.max(0, Math.min(100, minutesFromStart / 150 * 100))}%`;
+  const [scenarioName, setScenarioName] = useState("baseline");
+  const { data, error, loading } = useInitialPlan(scenarioName);
+  const [scenarios, setScenarios] = useState<string[]>(["baseline", "impossible", "stress"]);
+  const [revised, setRevised] = useState<Plan>();
+  const [diff, setDiff] = useState<Diff>();
+  const [activeReport, setActiveReport] = useState<{ passed: boolean; checks: { id: string; passed: boolean; details: string }[] }>();
+  const [city, setCity] = useState<CityMap>();
+  const [clock, setClock] = useState(480);
+  const [playing, setPlaying] = useState(false);
+  const [activeClosure, setActiveClosure] = useState<{ fromLocationId: string; toLocationId: string; label: string }[]>([]);
+  const [activeFailures, setActiveFailures] = useState<Record<string, number>>({});
+  const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
+  useEffect(() => { api.scenarios().then((items) => setScenarios(items.map((item) => item.name))).catch(() => undefined); }, []);
+  useEffect(() => { fetch("/city_map.json").then((response) => response.json() as Promise<CityMap>).then(setCity).catch(() => undefined); }, []);
+  const loadedPlan = data ? (revised ?? data.plan) : undefined;
+  const end = loadedPlan && data ? Math.max(data.scenario.start_time + 60, ...loadedPlan.routes.flatMap((route) => route.stops.map((stop) => stop.depart + 20))) : 0;
+  useEffect(() => { if (data) { setClock(data.scenario.now); setPlaying(false); setSelectedVehicle(null); } }, [data?.scenario.name, data?.scenario.now]);
+  useEffect(() => {
+    if (!playing || !end) return undefined;
+    const timer = window.setInterval(() => setClock((value) => {
+      if (value >= end) { setPlaying(false); return end; }
+      return Math.min(end, value + 1);
+    }), 300);
+    return () => window.clearInterval(timer);
+  }, [end, playing]);
+  const { hoveredDelivery } = useSessionStore();
+  if (loading) return <div className="p12-state"><RefreshCw className="p12-spin" /><h1>Loading plan</h1><p>Reading the deterministic engine…</p></div>;
+  if (error || !data) return <div className="p12-state p12-error"><AlertCircle /><h1>Plan unavailable</h1><p>{error?.message ?? "The API did not return a plan."}</p><button onClick={() => window.location.reload()}>Retry</button></div>;
+  const { scenario, plan, report } = data;
+  const displayedPlan = revised ?? plan;
+  const totalTravel = plan.routes.reduce((sum, route) => sum + route.total_travel, 0);
+  const totalWait = plan.routes.reduce((sum, route) => sum + route.total_wait, 0);
+  const mapRoutes = city ? toMapRoutes(displayedPlan, scenario) : [];
+  const baselineRoutes = city && diff ? toMapRoutes(plan, scenario) : undefined;
+  const stopStatus = Object.fromEntries((diff?.rows ?? []).map((row) => [row.delivery_id, row.classification]));
+  const newKeys = diff?.rows.filter((row) => row.badge === "NEW").map((row) => row.delivery_id) ?? [];
+  const unplacedLocationIds = displayedPlan.unplaced.map((item) => scenario.deliveries.find((delivery) => delivery.id === item.delivery_id)?.location_id).filter((id): id is string => Boolean(id));
+  return <div className="p12-app"><header className="p12-header"><div className="p12-brand"><span className="p12-brand-mark"><Route size={19} /></span><span>ReRoute</span></div><label className="p12-scenario">Scenario <select value={scenarioName} onChange={(event) => { setScenarioName(event.target.value); setRevised(undefined); setDiff(undefined); setActiveClosure([]); setActiveFailures({}); }}>{scenarios.map((name) => <option key={name}>{name}</option>)}</select></label><span className="p12-mode">● REAL API · OFFLINE DATA</span></header><main className="p12-main"><div className="p12-title"><div><p className="p12-kicker">{revised ? "REVISED PLAN" : "INITIAL PLAN"} · {scenario.name.toUpperCase()}</p><h1>Dispatch board</h1><p>Deterministic fleet plan with timing, capacity, and feasibility evidence.</p></div><div className={`p12-validation ${(activeReport ?? report).passed ? "ok" : "bad"}`}>{(activeReport ?? report).passed ? <CheckCircle2 /> : <AlertCircle />} {(activeReport ?? report).passed ? "Validated" : "Validation failed"}</div></div><section className="p12-kpis"><Kpi label="Deliveries planned" value={`${scenario.deliveries.length - displayedPlan.unplaced.length}/${scenario.deliveries.length}`} note={`${displayedPlan.unplaced.length} unplaced`} icon={<Truck />} /><Kpi label="Vehicles active" value={`${displayedPlan.routes.length}`} note={`${scenario.vehicles.length} available`} icon={<Route />} /><Kpi label="Travel time" value={`${displayedPlan.routes.reduce((sum, route) => sum + route.total_travel, 0) || totalTravel} min`} note="Matrix travel" icon={<Map />} /><Kpi label="Waiting time" value={`${displayedPlan.routes.reduce((sum, route) => sum + route.total_wait, 0) || totalWait} min`} note="Window waiting" icon={<Clock3 />} /></section><DisruptionConsole scenario={scenario} onResult={(result) => { if (result.proposal.status !== "confirmed") return; setRevised(result.revised); setDiff(result.diff); setActiveReport(result.proposal.impact_preview?.validation_report); const disruption = result.proposal.disruption; if (disruption.type === "road_closure") setActiveClosure([{ fromLocationId: String(disruption.a ?? ""), toLocationId: String(disruption.b ?? ""), label: "Road closure" }]); if (disruption.type === "vehicle_failure") setActiveFailures({ [String(disruption.vehicle_id ?? "")]: Number(disruption.at_time ?? scenario.now) }); }} /><SimulationClock clock={clock} start={scenario.start_time} end={end} playing={playing} onClock={setClock} onPlaying={setPlaying} onReset={() => { setPlaying(false); setClock(scenario.now); }} /><div className="p12-grid"><section className="p12-panel p12-gantt-panel"><div className="p12-panel-heading"><div><h2>Vehicle timelines</h2><p>Service blocks, delivery windows, and current-time marker.</p></div><span className="p12-now-key">NOW {minutes(clock)}</span></div><Gantt plan={displayedPlan} scenario={scenario} clock={clock} /><LoadProfile plan={displayedPlan} scenario={scenario} /></section>{city ? <ScheduleMap city={city} routes={mapRoutes} clock={clock} baselineRoutes={baselineRoutes} failures={activeFailures} closures={activeClosure} stopStatus={stopStatus} newKeys={newKeys} unplacedLocationIds={unplacedLocationIds} highlightedKey={hoveredDelivery} selectedVehicleId={selectedVehicle} onHoverStop={(key) => sessionStore.setHovered(key)} onSelectVehicle={setSelectedVehicle} /> : <section className="p12-panel p12-map-panel"><div className="p12-panel-heading"><h2>Loading schematic map</h2></div></section>}</div><StopTable plan={displayedPlan} scenario={scenario} />{diff && <><CompareView before={plan} after={displayedPlan} /><DiffTable diff={diff} /></>}<div className="p12-bottom-grid"><Unplaced plan={displayedPlan} /><VerifyPanel report={activeReport ?? report} onValidate={() => { void api.validate(displayedPlan).then(setActiveReport); }} /></div><Limits /></main></div>;
 }
 
 export default App;
