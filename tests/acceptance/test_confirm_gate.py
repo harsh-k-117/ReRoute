@@ -4,7 +4,6 @@ import pytest
 
 pytestmark = [
     pytest.mark.acceptance,
-    pytest.mark.xfail(reason="not implemented: Phase 11 API gate", strict=False),
 ]
 
 

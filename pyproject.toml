@@ -14,6 +14,9 @@ dependencies = [
   "uvicorn[standard]>=0.30,<1",
 ]
 
+[project.scripts]
+reroute = "scripts.cli:main"
+
 [dependency-groups]
 dev = [
   "hypothesis>=6,<7",
