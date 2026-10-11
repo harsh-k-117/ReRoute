@@ -1,0 +1,12 @@
+/*
+ * frontend/src/styles/tokens.css - design tokens
+ *
+ * Lane : P4 UX & story lead (single writer for this path)
+ * Stack: Vite · React 18 · TypeScript · Tailwind · shadcn/ui · TanStack Query · Zustand · custom SVG + d3-scale · openapi-typescript · Playwright · NO map libraries, NO CDNs
+ * Rule : green / amber / red are RESERVED for kept / moved / broken. Never use them for anything else.
+ */
+:root {
+  --color-kept: #16a34a;
+  --color-moved: #d97706;
+  --color-broken: #dc2626;
+}

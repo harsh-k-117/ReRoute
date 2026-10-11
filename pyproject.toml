@@ -1,0 +1,30 @@
+# Lane: ALL (root config). Stack: Python 3.12 · uv · FastAPI · Pydantic v2 · pytest · Hypothesis · ruff
+[project]
+name = "reroute"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115",
+  "pydantic>=2.8",
+  "uvicorn[standard]>=0.30",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "hypothesis>=6.100", "ruff>=0.6", "httpx>=0.27"]
+bench = ["ortools>=9.10"]        # star: benchmarks only, never imported by runtime code
+llm = ["anthropic>=0.34"]         # star: optional LLM extractor behind REROUTE_LLM_EXTRACTOR=1
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
