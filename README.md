@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ReRoute
 
 Disruption-aware vehicle routing with a validator gate, reason-carrying diffs and a propose -> preview -> confirm dispatcher flow.
@@ -18,3 +19,13 @@ make demo     # one-command OFFLINE demo
 - [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md): R1-R15
 - [`docs/TECH_STACK.md`](docs/TECH_STACK.md): stack and where it lives
 - [`docs/FILE_STRUCTURE.md`](docs/FILE_STRUCTURE.md): annotated file tree
+=======
+# Vortexa-hackathon-project
+
+# Team Members
+
+1. Harsh Kulkarni
+2. Prathamesh Devkar
+3. Vihaan Aptekar
+4. Abhishek Kalimath
+>>>>>>> a76d3f907278e5391ebf00a6642999eb1469446e
